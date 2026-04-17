@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>김기사랩 투자조합 관리 포털</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --border: rgba(0,0,0,0.07);
+  --border-md: rgba(0,0,0,0.12);
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --blue: #2563eb;
+  --blue-light: #eff6ff;
+  --blue-text: #1d4ed8;
+  --green: #16a34a;
+  --green-light: #f0fdf4;
+  --green-text: #15803d;
+  --amber: #d97706;
+  --amber-light: #fffbeb;
+  --amber-text: #b45309;
+  --red: #dc2626;
+  --red-light: #fef2f2;
+  --red-text: #b91c1c;
+  --purple: #7c3aed;
+  --purple-light: #f5f3ff;
+  --purple-text: #6d28d9;
+  --teal: #0d9488;
+  --teal-light: #f0fdfa;
+  --teal-text: #0f766e;
+  --sidebar-w: 220px;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+}
+.sb-logo { padding: 24px 20px 20px; border-bottom: 1px solid var(--border); }
+.sb-logo-mark {
+  width: 32px; height: 32px; background: var(--blue); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600; color: white; margin-bottom: 10px;
+}
+.sb-logo-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.sb-logo-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.sb-nav { padding: 12px 0; flex: 1; overflow-y: auto; }
+.sb-section-label {
+  font-size: 10px; font-weight: 600; color: var(--text-tertiary);
+  padding: 8px 20px 4px; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 20px; font-size: 13px; color: var(--text-secondary);
+  cursor: pointer; margin: 1px 8px; border-radius: 8px; transition: all 0.15s;
+}
+.nav-item:hover { background: var(--bg); color: var(--text-primary); }
+.nav-item.active { background: var(--blue-light); color: var(--blue-text); font-weight: 500; }
+.nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto; background: var(--bg); color: var(--text-tertiary);
+  font-size: 10px; padding: 1px 6px; border-radius: 99px;
+}
+.nav-item.active .nav-badge { background: rgba(37,99,235,0.12); color: var(--blue-text); }
+.sb-footer {
+  padding: 16px 20px; border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--text-tertiary);
+}
+.sb-footer-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; display: inline-block; margin-right: 5px; }
+
+/* ── MAIN ── */
+.main { margin-left: var(--sidebar-w); flex: 1; min-width: 0; padding: 28px 32px; }
+.page { display: none; }
+.page.active { display: block; }
+
+.page-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 24px;
+}
+.page-title { font-size: 20px; font-weight: 600; }
+.page-sub { font-size: 13px; color: var(--text-tertiary); margin-top: 4px; }
+.live-tag {
+  display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-tertiary);
+  background: var(--surface); border: 1px solid var(--border); padding: 5px 10px; border-radius: 99px;
+}
+
+/* ── STAT GRID ── */
+.stat-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px; transition: box-shadow 0.2s;
+}
+.stat-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.stat-label { font-size: 12px; color: var(--text-tertiary); margin-bottom: 8px; font-weight: 500; }
+.stat-value { font-size: 22px; font-weight: 600; }
+.stat-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 5px; }
+.c-blue { color: var(--blue); }
+.c-green { color: var(--green); }
+.c-amber { color: var(--amber); }
+.c-red { color: var(--red); }
+.c-purple { color: var(--purple); }
+
+/* ── CARD ── */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; margin-bottom: 16px;
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+}
+.card-title { font-size: 14px; font-weight: 600; }
+.card-count { font-size: 12px; color: var(--text-tertiary); background: var(--bg); padding: 2px 8px; border-radius: 99px; }
+
+/* ── CHARTS ROW ── */
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+.chart-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+
+/* ── TABLE ── */
+.tw { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600;
+  color: var(--text-tertiary); border-bottom: 1px solid var(--border);
+  white-space: nowrap; letter-spacing: 0.03em; text-transform: uppercase; background: #fafafa;
+}
+td { padding: 12px 14px; color: var(--text-primary); border-bottom: 1px solid var(--border); white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafeff; }
+.nr { text-align: right; }
+
+/* ── BADGE ── */
+.badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+.b-blue   { background: var(--blue-light);   color: var(--blue-text); }
+.b-green  { background: var(--green-light);  color: var(--green-text); }
+.b-amber  { background: var(--amber-light);  color: var(--amber-text); }
+.b-red    { background: var(--red-light);    color: var(--red-text); }
+.b-purple { background: var(--purple-light); color: var(--purple-text); }
+.b-teal   { background: var(--teal-light);   color: var(--teal-text); }
+.b-gray   { background: var(--bg);           color: var(--text-secondary); }
+
+/* ── PROGRESS ── */
+.prog-wrap { min-width: 80px; }
+.prog-label { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+.prog-bar { height: 4px; background: var(--bg); border-radius: 99px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 99px; }
+
+/* ── FILTER ROW ── */
+.filter-row {
+  display: flex; gap: 8px; align-items: center;
+  padding: 12px 16px; border-bottom: 1px solid var(--border); background: #fafafa;
+}
+.filter-row input, .filter-row select {
+  font-size: 13px; padding: 6px 10px; border: 1px solid var(--border-md);
+  border-radius: var(--radius-sm); background: white; color: var(--text-primary);
+  outline: none; font-family: inherit; transition: border-color 0.15s;
+}
+.filter-row input { width: 180px; }
+.filter-row input:focus, .filter-row select:focus { border-color: var(--blue); }
+.filter-count { margin-left: auto; font-size: 12px; color: var(--text-tertiary); }
+
+/* ── DONUT LEGEND ── */
+.donut-wrap { display: flex; gap: 20px; align-items: center; }
+.donut-legend { font-size: 12px; color: var(--text-secondary); }
+.legend-item { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+/* ── LP TOP CARDS ── */
+.lp-top-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 16px; }
+.lp-top-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+}
+.lp-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.lp-top-name { font-size: 13px; font-weight: 500; }
+.lp-top-amt { font-size: 12px; color: var(--blue); font-weight: 600; margin-top: 2px; }
+.lp-top-type { font-size: 11px; color: var(--text-tertiary); }
+
+/* ── FUND DETAIL ── */
+.detail-back {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;
+  padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+  background: white; transition: all 0.15s;
+}
+.detail-back:hover { color: var(--blue); border-color: var(--blue); }
+
+.detail-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.detail-info-card {
+  background: white; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px 18px;
+}
+.detail-info-label { font-size: 11px; color: var(--text-tertiary); margin-bottom: 5px; font-weight: 500; letter-spacing: 0.03em; text-transform: uppercase; }
+.detail-info-value { font-size: 15px; font-weight: 600; }
+
+.fund-name-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 6px;
+}
+.fund-name-title { font-size: 22px; font-weight: 700; }
+
+/* ── COMPANY MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  z-index: 999; align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: white; border-radius: 16px; width: 680px; max-width: 95vw;
+  max-height: 85vh; overflow-y: auto; padding: 28px; position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.modal-close {
+  position: absolute; top: 18px; right: 18px; width: 28px; height: 28px;
+  border-radius: 99px; border: 1px solid var(--border); background: var(--bg);
+  cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); transition: all 0.15s;
+}
+.modal-close:hover { background: var(--red-light); color: var(--red); }
+.modal-co-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.modal-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+.modal-info-item { background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+.modal-info-label { font-size: 10px; color: var(--text-tertiary); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 4px; }
+.modal-info-value { font-size: 13px; font-weight: 500; word-break: break-all; }
+.modal-section-title { font-size: 13px; font-weight: 600; margin: 16px 0 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.fin-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+.fin-table th { padding: 7px 10px; text-align: right; font-size: 10px; color: var(--text-tertiary); font-weight: 600; letter-spacing: 0.03em; background: #fafafa; border-bottom: 1px solid var(--border); }
+.fin-table th:first-child { text-align: left; }
+.fin-table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--border); }
+.fin-table td:first-child { text-align: left; font-weight: 600; }
+.fin-table tr:last-child td { border-bottom: none; }
+.fin-pos { color: var(--blue); }
+.fin-neg { color: var(--red); }
+
+/* clickable fund row */
+.fund-row-clickable { cursor: pointer; }
+.fund-row-clickable:hover td { background: #f0f4ff !important; }
+.fund-row-clickable td:first-child { color: var(--blue-text); font-weight: 600; text-decoration: underline; text-decoration-color: transparent; transition: text-decoration-color 0.15s; }
+.fund-row-clickable:hover td:first-child { text-decoration-color: var(--blue); }
+</style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<nav class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-mark">김</div>
+    <div class="sb-logo-name">김기사랩</div>
+    <div class="sb-logo-sub">투자조합 관리 포털</div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-section-label">어드민</div>
+    <div class="nav-item active" onclick="switchPage('fund')">
+      <span class="nav-icon">🏢</span>조합 현황
+    </div>
+    <div class="nav-item" onclick="switchPage('inv')">
+      <span class="nav-icon">📈</span>투자 현황
+      <span class="nav-badge" id="invNavBadge">91</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('lp')">
+      <span class="nav-icon">👥</span>LP 현황
+      <span class="nav-badge">78</span>
+    </div>
+  </div>
+  <div class="sb-footer">
+    <div><span class="sb-footer-dot"></span>에어테이블 실시간 연동</div>
+    <div style="margin-top:4px;">2026.04.16 기준</div>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- ① 조합 현황 -->
+  <div class="page active" id="page-fund">
+    <div class="page-header">
+      <div>
+        <div class="page-title">조합 현황</div>
+        <div class="page-sub">김기사랩 운용 투자조합 전체 현황</div>
+      </div>
+      <div class="live-tag"><span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;"></span>실시간</div>
+    </div>
+    <div class="stat-grid" id="fundStats"></div>
+    <div style="margin-bottom:16px;">
+      <div class="chart-card">
+        <div class="chart-title">결성금액 vs 납입금액 (억원)</div>
+        <div style="position:relative;height:200px;"><canvas id="barChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">조합 상세</span>
+        <span class="card-count">5개 조합 · 조합명 클릭 시 상세보기</span>
+      </div>
+      <div class="tw"><table>
+        <thead><tr>
+          <th>조합명</th><th>결성일</th><th>만기일</th><th>경과기간</th>
+          <th class="nr">결성금액</th><th class="nr">투자회사 수</th><th>상태</th>
+        </tr></thead>
+        <tbody id="fundTbody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ① 조합 상세 페이지 -->
+  <div class="page" id="page-fund-detail">
+    <div class="detail-back" onclick="switchPage('fund')">← 조합 현황으로</div>
+    <div id="fundDetailContent"></div>
+  </div>
+
+  <!-- ② 투자 현황 -->
+  <div class="page" id="page-inv">
+    <div class="page-header">
+      <div>
+        <div class="page-title">투자 현황</div>
+        <div class="page-sub">전체 포트폴리오 투자 내역</div>
+      </div>
+      <div class="live-tag"><span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;"></span>실시간</div>
+    </div>
+    <div class="stat-grid" id="invStats"></div>
+    <div class="row2">
+      <div class="chart-card">
+        <div class="chart-title">투자 상태 분포</div>
+        <div style="display:flex;gap:20px;align-items:center;">
+          <div style="position:relative;width:140px;height:140px;flex-shrink:0;"><canvas id="statusDonut"></canvas></div>
+          <div id="statusLegend" class="donut-legend"></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">조합별 투자건수</div>
+        <div style="position:relative;height:160px;"><canvas id="fundInvBar"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="filter-row">
+        <input type="text" id="invSearch" placeholder="🔍  회사명 검색..." oninput="filterInv()">
+        <select id="invFund" onchange="filterInv()">
+          <option value="">전체 조합</option>
+          <option>1호</option><option>2호</option><option>3호</option>
+          <option>4호</option><option>컴퍼니1호</option>
+        </select>
+        <select id="invStatus" onchange="filterInv()">
+          <option value="">전체 상태</option>
+          <option>진행 중</option><option>성공</option><option>실패</option>
+        </select>
+        <span class="filter-count" id="invCount"></span>
+      </div>
+      <div class="tw"><table>
+        <thead><tr>
+          <th>#</th><th>회사명</th><th>조합</th><th>유형</th><th>투자일</th>
+          <th class="nr">투자금액</th><th class="nr">기업가치</th><th>상태</th>
+        </tr></thead>
+        <tbody id="invTbody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ③ LP 현황 -->
+  <div class="page" id="page-lp">
+    <div class="page-header">
+      <div>
+        <div class="page-title">LP 현황</div>
+        <div class="page-sub">출자자 현황 및 출자금액 관리</div>
+      </div>
+      <div class="live-tag"><span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;"></span>실시간</div>
+    </div>
+    <div class="stat-grid" id="lpStats"></div>
+    <div class="card-header" style="background:white;border:1px solid var(--border);border-radius:var(--radius) var(--radius) 0 0;padding:14px 18px;">
+      <span class="card-title">상위 출자자</span>
+      <span class="card-count">출자금액 기준 Top 4</span>
+    </div>
+    <div class="lp-top-grid" style="margin-top:0;border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);background:white;padding:14px;margin-bottom:16px;" id="lpTopGrid"></div>
+    <div class="card">
+      <div class="filter-row">
+        <input type="text" id="lpSearch" placeholder="🔍  LP명 검색..." oninput="filterLP()">
+        <select id="lpType" onchange="filterLP()">
+          <option value="">전체 유형</option>
+          <option>개인</option><option>법인</option>
+        </select>
+        <select id="lpAmt" onchange="filterLP()">
+          <option value="">전체 금액</option>
+          <option value="high">1억 이상</option>
+          <option value="low">1억 미만</option>
+          <option value="zero">미출자</option>
+        </select>
+        <span class="filter-count" id="lpCount"></span>
+      </div>
+      <div class="tw"><table>
+        <thead><tr>
+          <th>#</th><th>성명</th><th>유형</th>
+          <th class="nr">총 출자금액</th><th>상태</th>
+        </tr></thead>
+        <tbody id="lpTbody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────
+// DATA (Airtable 실데이터 반영, 2026-04-16)
+// ─────────────────────────────────────────────────────
+const FUNDS = [
+  {
+    id: 'rec1604ySaP3uVKka',
+    name:'김기사랩투자조합 1호', short:'1호',
+    formed:'2019-05-29', expires:'2027-05-29',
+    amount:651000000, paid:640634913, nav:470067600, investments:12,
+    elapsed:'6년 10개월 18일', bizno:'335-80-01585', unpaid:0
+  },
+  {
+    id: 'recoWZIdIyQasXoST',
+    name:'김기사랩투자조합 2호', short:'2호',
+    formed:'2020-04-07', expires:'2028-04-07',
+    amount:4550000000, paid:3958340371, nav:3129580486, investments:26,
+    elapsed:'6년 0개월 9일', bizno:'428-80-02280', unpaid:655005834
+  },
+  {
+    id: 'rec8o4efRkIhwOiOL',
+    name:'김기사랩투자조합 3호', short:'3호',
+    formed:'2022-05-04', expires:'2030-05-04',
+    amount:14430000000, paid:11161277893, nav:10411200873, investments:41,
+    elapsed:'3년 11개월 12일', bizno:'668-80-02280', unpaid:1386228304
+  },
+  {
+    id: 'recnFsdY84NhCM9tJ',
+    name:'김기사랩투자조합 4호', short:'4호',
+    formed:'2025-07-31', expires:'2033-07-31',
+    amount:5700000000, paid:1449900559, nav:1449900559, investments:8,
+    elapsed:'0년 8개월 16일', bizno:'372-80-03210', unpaid:106875000
+  },
+  {
+    id: 'recrjwhAEx7lYN2y6',
+    name:'김기사컴퍼니투자조합 1호', short:'컴퍼니1호',
+    formed:'2018-09-20', expires:'2026-09-20',
+    amount:451000000, paid:450016367, nav:300016367, investments:4,
+    elapsed:'7년 6개월 27일', bizno:'201-80-06012', unpaid:0
+  },
+];
+
+// ── 투자 데이터 (Airtable fldKgHckkom7BzziQ = 회사명 정확 반영) ──
+const INV = [
+  {no:1,name:'빅쏠',fund:'1호',type:'우선주',date:'2019-04-29',amount:50001666,val:1159900665,status:'성공 (M&A)'},
+  {no:2,name:'백스테이션',fund:'1호',type:'우선주',date:'2019-04-29',amount:10020000,val:310020000,status:'진행 중'},
+  {no:3,name:'21그램 그룹',fund:'1호',type:'우선주',date:'2019-04-30',amount:50028000,val:2506933400,status:'성공 (구주 매각)'},
+  {no:4,name:'엠투에스',fund:'1호',type:'우선주',date:'2019-05-03',amount:100007600,val:1667515465,status:'진행 중'},
+  {no:5,name:'위밋',fund:'1호',type:'우선주',date:'2019-05-07',amount:10033000,val:853239500,status:'성공 (구주 매각)'},
+  {no:6,name:'티라움',fund:'1호',type:'우선주',date:'2019-05-17',amount:50017500,val:700017500,status:'진행 중'},
+  {no:7,name:'웜바이',fund:'1호',type:'우선주',date:'2019-06-04',amount:10500000,val:310500000,status:'성공 (M&A)'},
+  {no:8,name:'브이드림',fund:'1호',type:'우선주',date:'2019-06-04',amount:99990000,val:999990000,status:'진행 중'},
+  {no:9,name:'인디펜던트',fund:'1호',type:'우선주',date:'2019-06-07',amount:10020000,val:310020000,status:'진행 중'},
+  {no:10,name:'어뎁션',fund:'1호',type:'우선주',date:'2019-07-18',amount:100012500,val:1100137500,status:'진행 중'},
+  {no:11,name:'빅쏠(2차)',fund:'1호',type:'우선주',date:'2019-10-10',amount:50004647,val:2049989382,status:'성공 (M&A)'},
+  {no:12,name:'마이프랜차이즈',fund:'1호',type:'보통주',date:'2019-11-12',amount:100000000,val:3000000000,status:'진행 중'},
+  {no:13,name:'더트라이브',fund:'컴퍼니1호',type:'우선주',date:'2019-09-10',amount:100006496,val:6430024384,status:'진행 중'},
+  {no:14,name:'모히또게임즈',fund:'컴퍼니1호',type:'보통주',date:'2020-04-01',amount:100000000,val:2250000000,status:'성공 (구주 매각)'},
+  {no:15,name:'태거스',fund:'본계정',type:'우선주',date:'2020-06-01',amount:100012995,val:4561935615,status:'성공 (M&A)'},
+  {no:16,name:'디네이처',fund:'컴퍼니1호',type:'우선주',date:'2020-06-01',amount:200009871,val:10031275656,status:'진행 중'},
+  {no:17,name:'브리즈랩',fund:'컴퍼니1호',type:'보통주',date:'2021-04-01',amount:50000000,val:150000000,status:'성공 (구주 매각)'},
+  {no:18,name:'쿼타랩',fund:'2호',type:'우선주',date:'2020-04-02',amount:49973540,val:8298094060,status:'진행 중'},
+  {no:19,name:'안가본길',fund:'2호',type:'우선주',date:'2020-04-06',amount:100003500,val:999672900,status:'실패 (파산)'},
+  {no:20,name:'닫닫닫',fund:'2호',type:'우선주',date:'2020-04-14',amount:99995904,val:7549789284,status:'진행 중'},
+  {no:21,name:'같다',fund:'2호',type:'우선주',date:'2020-05-11',amount:199985972,val:6501289930,status:'진행 중'},
+  {no:22,name:'언디파인드',fund:'2호',type:'우선주',date:'2020-05-21',amount:100000000,val:3652325000,status:'진행 중'},
+  {no:23,name:'하이브',fund:'2호',type:'보통주',date:'2020-05-26',amount:100032013,val:5263420224,status:'진행 중'},
+  {no:24,name:'알세미',fund:'2호',type:'우선주',date:'2020-05-27',amount:199999690,val:5999719330,status:'진행 중'},
+  {no:25,name:'클로넷코퍼레이션',fund:'2호',type:'우선주',date:'2020-06-18',amount:100003332,val:1000123332,status:'실패 (파산)'},
+  {no:26,name:'오물래',fund:'2호',type:'우선주',date:'2020-06-03',amount:100009143,val:1050063858,status:'실패 (파산)'},
+  {no:27,name:'페이히어',fund:'2호',type:'우선주',date:'2020-06-05',amount:100000548,val:1500563148,status:'진행 중'},
+  {no:28,name:'유비스랩',fund:'2호',type:'보통주',date:'2020-09-23',amount:100017360,val:4100239980,status:'진행 중'},
+  {no:29,name:'오늘의픽업',fund:'2호',type:'보통주',date:'2020-11-20',amount:300240000,val:3100140000,status:'성공 (M&A)'},
+  {no:30,name:'모아이스',fund:'2호',type:'보통주',date:'2021-01-15',amount:100763410,val:3201528345,status:'진행 중'},
+  {no:31,name:'하이브(2차)',fund:'2호',type:'보통주',date:'2021-02-25',amount:50020110,val:9950032040,status:'진행 중'},
+  {no:32,name:'숫자쏙컴퍼니',fund:'2호',type:'우선주',date:'2021-03-23',amount:99990000,val:2199960000,status:'성공 (M&A)'},
+  {no:33,name:'오늘의픽업(2차)',fund:'2호',type:'우선주',date:'2021-03-29',amount:128513910,val:8128948980,status:'성공 (M&A)'},
+  {no:34,name:'론픽',fund:'2호',type:'보통주',date:'2021-03-30',amount:100014618,val:6300041040,status:'진행 중'},
+  {no:35,name:'크래프타',fund:'2호',type:'보통주',date:'2021-04-02',amount:100500000,val:3400500000,status:'진행 중'},
+  {no:36,name:'빌리어네어즈',fund:'2호',type:'보통주',date:'2021-04-05',amount:199980000,val:1999980000,status:'진행 중'},
+  {no:37,name:'티제이락스',fund:'2호',type:'우선주',date:'2021-06-24',amount:300000000,val:6100000000,status:'진행 중'},
+  {no:38,name:'언디파인드(2차)',fund:'2호',type:'보통주',date:'2021-09-02',amount:17658750,val:3222583750,status:'진행 중'},
+  {no:39,name:'퍼플러스',fund:'2호',type:'보통주',date:'2021-09-15',amount:200000000,val:6100000000,status:'진행 중'},
+  {no:40,name:'론픽(2차)',fund:'2호',type:'우선주',date:'2021-11-29',amount:55167596,val:18115222884,status:'진행 중'},
+  {no:41,name:'Goodgang labs',fund:'2호',type:'SAFE',date:'2022-03-11',amount:455677314,val:12132097968,status:'진행 중'},
+  {no:42,name:'퍼플러스(2차)',fund:'2호',type:'우선주',date:'2022-03-15',amount:299795650,val:10299732630,status:'진행 중'},
+  {no:43,name:'풀락',fund:'3호',type:'보통주',date:'2022-04-04',amount:100008000,val:1000008000,status:'실패 (파산)'},
+  {no:44,name:'마요코퍼레이션',fund:'3호',type:'보통주',date:'2022-04-04',amount:100000800,val:1000000800,status:'진행 중'},
+  {no:45,name:'레이챔블루',fund:'2호',type:'보통주',date:'2022-04-22',amount:299998011,val:5400791220,status:'진행 중'},
+  {no:46,name:'서사',fund:'3호',type:'보통주',date:'2022-04-05',amount:300002800,val:2998335200,status:'진행 중'},
+  {no:47,name:'루미글루',fund:'3호',type:'보통주',date:'2022-04-21',amount:50000000,val:550000000,status:'실패 (파산)'},
+  {no:48,name:'리조트피플',fund:'3호',type:'보통주',date:'2022-05-06',amount:500006052,val:10000406052,status:'진행 중'},
+  {no:49,name:'D.TO',fund:'3호',type:'SAFE',date:'2022-06-15',amount:520367055,val:0,status:'진행 중'},
+  {no:50,name:'딜리버스',fund:'3호',type:'보통주',date:'2022-07-11',amount:250000000,val:11760000000,status:'진행 중'},
+  {no:51,name:'클리카',fund:'3호',type:'보통주',date:'2022-07-14',amount:999957212,val:14636357212,status:'진행 중'},
+  {no:52,name:'비사이드코리아',fund:'3호',type:'보통주',date:'2022-08-19',amount:299158726,val:5099143678,status:'진행 중'},
+  {no:53,name:'Ceeya',fund:'3호',type:'SAFE',date:'2022-11-08',amount:0,val:0,status:'진행 중'},
+  {no:54,name:'오렌지닷볼네트워크',fund:'3호',type:'보통주',date:'2022-12-14',amount:200001252,val:5199842458,status:'진행 중'},
+  {no:55,name:'비락트',fund:'3호',type:'보통주',date:'2022-12-26',amount:200001600,val:3999997800,status:'진행 중'},
+  {no:56,name:'쏌핏',fund:'3호',type:'보통주',date:'2022-12-30',amount:200006295,val:4299929756,status:'진행 중'},
+  {no:57,name:'엑스크루',fund:'3호',type:'보통주',date:'2023-04-06',amount:300016659,val:6000369069,status:'진행 중'},
+  {no:58,name:'필드멘토',fund:'3호',type:'보통주',date:'2023-04-12',amount:350001000,val:3500010000,status:'진행 중'},
+  {no:59,name:'딜리버스(2차)',fund:'3호',type:'RCPS',date:'2023-04-24',amount:300000000,val:19854720000,status:'진행 중'},
+  {no:60,name:'준컴퍼니',fund:'3호',type:'보통주',date:'2023-04-28',amount:667980290,val:6667980240,status:'진행 중'},
+  {no:61,name:'나니아락스',fund:'3호',type:'우선주',date:'2023-05-10',amount:500006690,val:15499897148,status:'진행 중'},
+  {no:62,name:'고레로보틱스',fund:'3호',type:'우선주',date:'2023-09-11',amount:400000000,val:5200000000,status:'진행 중'},
+  {no:63,name:'케이뷰티월드와이드',fund:'3호',type:'보통주',date:'2023-09-12',amount:300001000,val:2900001000,status:'진행 중'},
+  {no:64,name:'심플컴퍼니',fund:'3호',type:'보통주',date:'2023-09-20',amount:200000000,val:2775000000,status:'실패 (파산)'},
+  {no:65,name:'Argos',fund:'3호',type:'SAFE',date:'2023-09-26',amount:0,val:0,status:'진행 중'},
+  {no:66,name:'서사(2차)',fund:'3호',type:'보통주',date:'2023-10-05',amount:100005531,val:5100431421,status:'진행 중'},
+  {no:67,name:'리조트피플(2차)',fund:'3호',type:'RCPS',date:'2023-10-13',amount:152646307,val:20052868913,status:'진행 중'},
+  {no:68,name:'론픽(3차)',fund:'3호',type:'우선주',date:'2024-02-13',amount:500493332,val:31584965147,status:'진행 중'},
+  {no:69,name:'클리카(2차)',fund:'3호',type:'보통주',date:'2024-02-20',amount:500139735,val:19000115849,status:'진행 중'},
+  {no:70,name:'디지털뉴트리션',fund:'3호',type:'RCPS',date:'2024-04-17',amount:100000000,val:3530000000,status:'진행 중'},
+  {no:71,name:'엘케이알',fund:'3호',type:'RCPS',date:'2024-04-18',amount:300024000,val:3000024000,status:'진행 중'},
+  {no:72,name:'세컨드유레카',fund:'3호',type:'RCPS',date:'2024-04-23',amount:400069020,val:4400079216,status:'실패 (파산)'},
+  {no:73,name:'매월매주',fund:'3호',type:'RCPS',date:'2024-04-30',amount:300327333,val:5000609118,status:'진행 중'},
+  {no:74,name:'루미글루(2차)',fund:'3호',type:'보통주',date:'2024-05-24',amount:19986860,val:1820286860,status:'진행 중'},
+  {no:75,name:'딜리버스(3차)',fund:'3호',type:'우선주',date:'2024-06-20',amount:300081290,val:40625023172,status:'진행 중'},
+  {no:76,name:'D.TO(2차)',fund:'3호',type:'SAFE',date:'2024-06-24',amount:0,val:0,status:'진행 중'},
+  {no:77,name:'에이아이링고',fund:'3호',type:'RCPS',date:'2024-09-11',amount:100035000,val:2485960000,status:'진행 중'},
+  {no:78,name:'뉴메스',fund:'3호',type:'RCPS',date:'2024-10-25',amount:300040000,val:5500040000,status:'진행 중'},
+  {no:79,name:'고레로보틱스(2차)',fund:'3호',type:'RCPS',date:'2024-12-06',amount:249990644,val:19881652500,status:'진행 중'},
+  {no:80,name:'스위그',fund:'3호',type:'RCPS',date:'2024-12-18',amount:199984062,val:2000002616,status:'진행 중'},
+  {no:81,name:'남도마켓',fund:'3호',type:'RCPS',date:'2024-12-26',amount:299982888,val:8524873944,status:'진행 중'},
+  {no:82,name:'팀스케어',fund:'3호',type:'RCPS',date:'2025-04-23',amount:200000000,val:2380000000,status:'진행 중'},
+  {no:83,name:'나니아락스(2차)',fund:'3호',type:'RCPS',date:'2025-04-02',amount:199956510,val:29999781435,status:'진행 중'},
+  {no:84,name:'비사이드코리아(2차)',fund:'3호',type:'보통주',date:'2025-09-24',amount:199999950,val:17199995700,status:'진행 중'},
+  {no:85,name:'아르고노트에이아이',fund:'4호',type:'RCPS',date:'2025-09-15',amount:199800000,val:1999800000,status:'진행 중'},
+  {no:86,name:'매일새옷',fund:'4호',type:'RCPS',date:'2025-09-18',amount:200001188,val:3700401188,status:'진행 중'},
+  {no:87,name:'링크루트',fund:'4호',type:'RCPS',date:'2025-11-21',amount:100002807,val:1999992807,status:'진행 중'},
+  {no:88,name:'리뉴어스랩',fund:'4호',type:'RCPS',date:'2025-11-21',amount:200013268,val:2699941502,status:'진행 중'},
+  {no:89,name:'물랑드서울',fund:'4호',type:'RCPS',date:'2025-11-24',amount:200005424,val:2221908904,status:'진행 중'},
+  {no:90,name:'수센캐럿츠',fund:'4호',type:'RCPS',date:'2025-12-26',amount:200100000,val:3200100000,status:'진행 중'},
+  {no:99,name:'큐팝',fund:'4호',type:'RCPS',date:'2026-03-16',amount:149972472,val:2499968472,status:'진행 중'},
+  {no:100,name:'플레어락스',fund:'4호',type:'우선주',date:'2026-04-06',amount:200005400,val:9601845400,status:'진행 중'},
+];
+
+const LP = [
+  {name:'신명진',type:'개인',amount:920000000},{name:'박종환',type:'개인',amount:920000000},
+  {name:'김원태',type:'개인',amount:830000000},{name:'(주)김기사랩',type:'법인',amount:930000000},
+  {name:'박준호',type:'개인',amount:650000000},{name:'이종석',type:'개인',amount:530000000},
+  {name:'이준영',type:'개인',amount:560000000},{name:'조종남',type:'개인',amount:330000000},
+  {name:'임대섭',type:'개인',amount:390000000},{name:'정원석',type:'개인',amount:130000000},
+  {name:'박천오',type:'개인',amount:390000000},{name:'이석우',type:'개인',amount:90000000},
+  {name:'(주)다이얼로그스페이스',type:'법인',amount:1000000000},{name:'(주)아라워크앤올',type:'법인',amount:300000000},
+  {name:'(주)케이큐브홀딩스',type:'법인',amount:0},{name:'(주)인피닉',type:'법인',amount:0},
+  {name:'(주)퍼슨넷',type:'법인',amount:0},{name:'(주)플레이스엠',type:'법인',amount:0},
+  {name:'(주)준테크',type:'법인',amount:0},{name:'송성근',type:'개인',amount:215000000},
+  {name:'최병준',type:'개인',amount:390000000},{name:'류영준',type:'개인',amount:300000000},
+  {name:'강률빈',type:'개인',amount:250000000},{name:'조성원',type:'개인',amount:200000000},
+  {name:'정주환',type:'개인',amount:300000000},{name:'박형규',type:'개인',amount:300000000},
+  {name:'임상규',type:'개인',amount:500000000},{name:'황성재',type:'개인',amount:500000000},
+  {name:'최성호',type:'개인',amount:300000000},{name:'이창수',type:'개인',amount:100000000},
+  {name:'국지연',type:'개인',amount:170000000},{name:'정우',type:'개인',amount:100000000},
+  {name:'박영호',type:'개인',amount:100000000},{name:'이석호',type:'개인',amount:100000000},
+  {name:'양희웁',type:'개인',amount:100000000},{name:'이채희',type:'개인',amount:100000000},
+  {name:'강형민',type:'개인',amount:100000000},{name:'오경택',type:'개인',amount:300000000},
+  {name:'오경담',type:'개인',amount:100000000},{name:'최현진',type:'개인',amount:300000000},
+  {name:'김동우',type:'개인',amount:360000000},{name:'조민식',type:'개인',amount:300000000},
+  {name:'정의정',type:'개인',amount:100000000},{name:'김민지',type:'개인',amount:100000000},
+  {name:'김희재',type:'개인',amount:100000000},{name:'진승민',type:'개인',amount:100000000},
+  {name:'강성',type:'개인',amount:220000000},{name:'조현호',type:'개인',amount:200000000},
+  {name:'신정환',type:'개인',amount:100000000},{name:'구남균',type:'개인',amount:100000000},
+  {name:'김정수',type:'개인',amount:100000000},{name:'최용석',type:'개인',amount:100000000},
+  {name:'권순건',type:'개인',amount:100000000},{name:'노성운',type:'개인',amount:150000000},
+  {name:'박지영',type:'개인',amount:30000000},{name:'서원준',type:'개인',amount:60000000},
+  {name:'이덕환',type:'개인',amount:90000000},{name:'김훈성',type:'개인',amount:30000000},
+  {name:'김은성',type:'개인',amount:30000000},{name:'이해석',type:'개인',amount:30000000},
+  {name:'서대규',type:'개인',amount:30000000},{name:'김라윤',type:'개인',amount:0},
+  {name:'김후곤',type:'개인',amount:0},{name:'정지윤',type:'개인',amount:0},
+  {name:'오종민',type:'개인',amount:0},{name:'박현선',type:'개인',amount:0},
+  {name:'나준석',type:'개인',amount:0},{name:'김상혁',type:'개인',amount:0},
+  {name:'박진석',type:'개인',amount:0},{name:'류긍선',type:'개인',amount:0},
+  {name:'이승응',type:'개인',amount:0},{name:'김용재',type:'개인',amount:0},
+  {name:'김민기',type:'개인',amount:0},{name:'석창규',type:'개인',amount:0},
+  {name:'송재철',type:'개인',amount:0},
+];
+
+// ─────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────
+const fmt = n => {
+  if (!n || isNaN(n)) return '-';
+  if (n >= 100000000) return (n/100000000).toFixed(1) + '억';
+  if (n >= 10000) return Math.round(n/10000) + '만';
+  return n.toLocaleString();
+};
+const fmtFull = n => {
+  if (!n || isNaN(n)) return '-';
+  return n.toLocaleString() + '원';
+};
+const fmtD = s => s ? s.replace(/-/g, '.') : '-';
+const fmtComma = n => {
+  if (!n || isNaN(n)) return '-';
+  return n.toLocaleString('ko-KR') + '원';
+};
+const BARCOLS = ['#2563eb','#16a34a','#d97706','#dc2626','#7c3aed'];
+
+// ─────────────────────────────────────────────────────
+// PAGE SWITCH
+// ─────────────────────────────────────────────────────
+function switchPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const target = document.getElementById('page-' + p);
+  if (target) target.classList.add('active');
+  const navMap = {fund:0, inv:1, lp:2};
+  if (navMap[p] !== undefined) {
+    document.querySelectorAll('.nav-item')[navMap[p]].classList.add('active');
+  } else if (p === 'fund-detail') {
+    document.querySelectorAll('.nav-item')[0].classList.add('active');
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// FUND DETAIL — filter helper
+// ─────────────────────────────────────────────────────
+let _detailFundId = null;
+let _detailFilter = null;
+
+const DETAIL_SBADGE = {'진행 중':'b-blue','성공 (M&A)':'b-teal','성공 (구주 매각)':'b-green','실패 (파산)':'b-red'};
+
+function renderDetailInvRows(data) {
+  const tb = document.getElementById('detail-inv-tbody');
+  if (!tb) return;
+  const cardCount = document.getElementById('detail-inv-count');
+  if (cardCount) cardCount.textContent = data.length + '건';
+  tb.innerHTML = data.sort((a,b)=>a.no-b.no).map((inv,idx) => `
+    <tr>
+      <td style="color:var(--text-tertiary);">${idx+1}</td>
+      <td style="font-weight:600;">${inv.name}</td>
+      <td><span class="badge b-purple">${inv.type}</span></td>
+      <td style="color:var(--text-secondary);">${fmtD(inv.date)}</td>
+      <td class="nr" style="color:var(--blue);font-weight:600;">${fmtComma(inv.amount)}</td>
+      <td class="nr">${inv.val>0?fmtComma(inv.val):'-'}</td>
+      <td><span class="badge ${DETAIL_SBADGE[inv.status]||'b-gray'}">${inv.status}</span></td>
+    </tr>`).join('');
+}
+
+function filterDetailInv(status) {
+  const fund = FUNDS.find(f => f.id === _detailFundId);
+  if (!fund) return;
+  const all = INV.filter(i => i.fund === fund.short);
+  // toggle: 같은 필터 재클릭 시 전체 보기
+  if (_detailFilter === status) {
+    _detailFilter = null;
+    document.querySelectorAll('.detail-stat-btn').forEach(b => b.style.outline = 'none');
+    renderDetailInvRows(all);
+    return;
+  }
+  _detailFilter = status;
+  document.querySelectorAll('.detail-stat-btn').forEach(b => b.style.outline = 'none');
+  const btn = document.getElementById('detail-btn-' + status);
+  if (btn) btn.style.outline = '2px solid currentColor';
+  renderDetailInvRows(all.filter(i => i.status.includes(status)));
+}
+
+// ─────────────────────────────────────────────────────
+// FUND DETAIL PAGE
+// ─────────────────────────────────────────────────────
+function openFundDetail(fundId) {
+  _detailFundId = fundId;
+  _detailFilter = null;
+  const fund = FUNDS.find(f => f.id === fundId);
+  if (!fund) return;
+  const fundInvs = INV.filter(i => i.fund === fund.short);
+  const totalInvAmt = fundInvs.reduce((s,i)=>s+i.amount,0);
+  const activeN = fundInvs.filter(i=>i.status==='진행 중').length;
+  const successN = fundInvs.filter(i=>i.status.includes('성공')).length;
+  const failN = fundInvs.filter(i=>i.status.includes('실패')).length;
+  const soon = new Date(fund.expires) < new Date('2027-01-01');
+
+  const invRows = fundInvs.sort((a,b)=>a.no-b.no).map((inv,idx) => `
+    <tr>
+      <td style="color:var(--text-tertiary);">${idx+1}</td>
+      <td style="font-weight:600;">${inv.name}</td>
+      <td><span class="badge b-purple">${inv.type}</span></td>
+      <td style="color:var(--text-secondary);">${fmtD(inv.date)}</td>
+      <td class="nr" style="color:var(--blue);font-weight:600;">${fmtComma(inv.amount)}</td>
+      <td class="nr">${inv.val>0?fmtComma(inv.val):'-'}</td>
+      <td><span class="badge ${DETAIL_SBADGE[inv.status]||'b-gray'}">${inv.status}</span></td>
+    </tr>`).join('');
+
+  const content = `
+    <div class="page-header">
+      <div>
+        <div class="fund-name-header">
+          <span class="fund-name-title">${fund.name}</span>
+          <span class="badge ${soon?'b-amber':'b-blue'}">${soon?'만기임박':'운용중'}</span>
+        </div>
+        <div class="page-sub">사업자번호 ${fund.bizno}</div>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div class="detail-info-card">
+        <div class="detail-info-label">결성일</div>
+        <div class="detail-info-value">${fmtD(fund.formed)}</div>
+      </div>
+      <div class="detail-info-card">
+        <div class="detail-info-label">만기일</div>
+        <div class="detail-info-value" style="color:${soon?'var(--amber)':'inherit'}">${fmtD(fund.expires)}</div>
+      </div>
+      <div class="detail-info-card">
+        <div class="detail-info-label">경과기간</div>
+        <div class="detail-info-value">${fund.elapsed}</div>
+      </div>
+      <div class="detail-info-card">
+        <div class="detail-info-label">결성금액</div>
+        <div class="detail-info-value">${fmtFull(fund.amount)}</div>
+      </div>
+      <div class="detail-info-card">
+        <div class="detail-info-label">납입금액</div>
+        <div class="detail-info-value" style="color:var(--blue)">${fmtFull(fund.paid)}</div>
+      </div>
+      <div class="detail-info-card">
+        <div class="detail-info-label">미납금액</div>
+        <div class="detail-info-value" style="color:${fund.unpaid>0?'var(--amber)':'var(--green)'}">${fmtFull(fund.unpaid)}</div>
+      </div>
+      <div class="detail-info-card">
+        <div class="detail-info-label">NAV (순자산가치)</div>
+        <div class="detail-info-value" style="color:var(--green)">${fmtFull(fund.nav)}</div>
+      </div>
+      <div class="detail-info-card">
+        <div class="detail-info-label">납입률</div>
+        <div class="detail-info-value">${Math.round(fund.paid/fund.amount*100)}%</div>
+      </div>
+      <div class="detail-info-card">
+        <div class="detail-info-label">투자회사 수</div>
+        <div class="detail-info-value c-blue">${fund.investments}개사</div>
+      </div>
+    </div>
+
+    <div class="stat-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:20px;">
+      <div class="stat-card">
+        <div class="stat-label">총 투자금액</div>
+        <div class="stat-value c-blue">${fmt(totalInvAmt)}</div>
+        <div class="stat-sub">누적 집행액</div>
+      </div>
+      <div class="stat-card detail-stat-btn" id="detail-btn-진행 중" onclick="filterDetailInv('진행 중')" style="cursor:pointer;transition:outline 0.15s;" title="클릭하여 필터 · 재클릭 시 전체보기">
+        <div class="stat-label">진행 중 <span style="font-size:10px;opacity:0.6;">클릭하여 보기</span></div>
+        <div class="stat-value c-amber">${activeN}건</div>
+        <div class="stat-sub">운용 중</div>
+      </div>
+      <div class="stat-card detail-stat-btn" id="detail-btn-성공" onclick="filterDetailInv('성공')" style="cursor:pointer;transition:outline 0.15s;" title="클릭하여 필터 · 재클릭 시 전체보기">
+        <div class="stat-label">회수 성공 <span style="font-size:10px;opacity:0.6;">클릭하여 보기</span></div>
+        <div class="stat-value c-green">${successN}건</div>
+        <div class="stat-sub">M&A·구주매각</div>
+      </div>
+      <div class="stat-card detail-stat-btn" id="detail-btn-실패" onclick="filterDetailInv('실패')" style="cursor:pointer;transition:outline 0.15s;" title="클릭하여 필터 · 재클릭 시 전체보기">
+        <div class="stat-label">실패 (파산) <span style="font-size:10px;opacity:0.6;">클릭하여 보기</span></div>
+        <div class="stat-value c-red">${failN}건</div>
+        <div class="stat-sub">손실 처리</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">투자 내역</span>
+        <span class="card-count" id="detail-inv-count">${fundInvs.length}건</span>
+      </div>
+      <div class="tw"><table>
+        <thead><tr>
+          <th>#</th><th>회사명</th><th>유형</th><th>투자일</th>
+          <th class="nr">투자금액</th><th class="nr">기업가치</th><th>상태</th>
+        </tr></thead>
+        <tbody id="detail-inv-tbody">${invRows}</tbody>
+      </table></div>
+    </div>
+  `;
+
+  document.getElementById('fundDetailContent').innerHTML = content;
+  switchPage('fund-detail');
+}
+
+// ─────────────────────────────────────────────────────
+// FUND PAGE
+// ─────────────────────────────────────────────────────
+const totalPaid = FUNDS.reduce((s,f)=>s+f.paid,0);
+const totalNAV  = FUNDS.reduce((s,f)=>s+f.nav,0);
+const totalInv  = FUNDS.reduce((s,f)=>s+f.investments,0);
+const totalAmt  = FUNDS.reduce((s,f)=>s+f.amount,0);
+const TOTAL_COMPANIES = 79; // 회사 (Companies) 테이블 실데이터 기준 (2026-04-16)
+
+[
+  {l:'운용 조합 수',v:'5개',s:'활성 조합',c:'c-blue'},
+  {l:'총 결성금액',v:fmt(totalAmt),s:'약정 기준',c:''},
+  {l:'총 납입금액',v:fmt(totalPaid),s:'실납입',c:'c-blue'},
+  {l:'총 투자회사 수',v:TOTAL_COMPANIES+'개사',s:'포트폴리오',c:'c-amber'},
+  {l:'총 투자건수',v:totalInv+'건',s:'포트폴리오',c:'c-purple'},
+].forEach(s => {
+  document.getElementById('fundStats').innerHTML +=
+    `<div class="stat-card"><div class="stat-label">${s.l}</div><div class="stat-value ${s.c}">${s.v}</div><div class="stat-sub">${s.s}</div></div>`;
+});
+
+const ftb = document.getElementById('fundTbody');
+FUNDS.forEach((f,i) => {
+  const soon = new Date(f.expires) < new Date('2027-01-01');
+  ftb.innerHTML += `<tr class="fund-row-clickable" onclick="openFundDetail('${f.id}')">
+    <td>${f.name}</td>
+    <td style="color:var(--text-secondary);">${fmtD(f.formed)}</td>
+    <td style="color:${soon?'var(--amber)':'var(--text-secondary)'};">${fmtD(f.expires)}</td>
+    <td style="color:var(--text-tertiary);">${f.elapsed}</td>
+    <td class="nr">${fmt(f.amount)}</td>
+    <td class="nr" style="font-weight:600;color:var(--blue);">${f.investments}개사</td>
+    <td><span class="badge ${soon?'b-amber':'b-blue'}">${soon?'만기임박':'운용중'}</span></td>
+  </tr>`;
+});
+
+// Fund charts
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: FUNDS.map(f=>f.short),
+    datasets: [
+      {label:'결성금액',data:FUNDS.map(f=>Math.round(f.amount/100000000)),backgroundColor:BARCOLS.map(c=>c+'22'),borderColor:BARCOLS,borderWidth:1.5},
+      {label:'납입금액',data:FUNDS.map(f=>Math.round(f.paid/100000000)),backgroundColor:BARCOLS,borderRadius:4},
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{font:{size:11},color:'#9ca3af'},grid:{display:false}},
+      y:{ticks:{callback:v=>v+'억',font:{size:10},color:'#9ca3af'},grid:{color:'rgba(0,0,0,0.04)'}}
+    }
+  }
+});
+
+
+// ─────────────────────────────────────────────────────
+// INV PAGE
+// ─────────────────────────────────────────────────────
+const INV_MAIN = INV.filter(i => i.fund !== '본계정'); // 본계정 제외
+const totalInvAmt = INV_MAIN.reduce((s,i)=>s+i.amount,0);
+const activeN = INV_MAIN.filter(i=>i.status==='진행 중').length;
+const successN = INV_MAIN.filter(i=>i.status.includes('성공')).length;
+const failN = INV_MAIN.filter(i=>i.status.includes('실패')).length;
+
+// ── 투자현황 stat 클릭 필터 ──
+let _invFilter = null;
+function filterInvByStatus(status) {
+  if (_invFilter === status) {
+    _invFilter = null;
+    document.querySelectorAll('.inv-stat-btn').forEach(b => b.style.outline='none');
+    renderInv(INV_MAIN);
+    return;
+  }
+  _invFilter = status;
+  document.querySelectorAll('.inv-stat-btn').forEach(b => b.style.outline='none');
+  const btn = document.getElementById('inv-btn-'+status);
+  if (btn) btn.style.outline = '2px solid currentColor';
+  renderInv(INV_MAIN.filter(i => i.status.includes(status)));
+}
+
+[
+  {l:'총 투자건수', v:INV_MAIN.length+'건', s:'전체', c:'c-blue', id:'', clickable:false},
+  {l:'총 투자금액', v:fmt(totalInvAmt), s:'누적 집행', c:'c-blue', id:'', clickable:false},
+  {l:'진행 중', v:activeN+'건', s:'운용 중', c:'c-amber', id:'', clickable:false},
+  {l:'회수 성공', v:successN+'건', s:'M&A·구주매각 · 클릭하여 보기', c:'c-green', id:'성공', clickable:true},
+  {l:'실패 (파산)', v:failN+'건', s:'손실 처리 · 클릭하여 보기', c:'c-red', id:'실패', clickable:true},
+].forEach(s=>{
+  const onclick = s.clickable ? `onclick="filterInvByStatus('${s.id}')"` : '';
+  const cls = s.clickable ? ' inv-stat-btn' : '';
+  const cursor = s.clickable ? 'cursor:pointer;' : '';
+  document.getElementById('invStats').innerHTML +=
+    `<div class="stat-card${cls}" id="${s.clickable?'inv-btn-'+s.id:''}" ${onclick} style="${cursor}transition:outline 0.15s;">
+       <div class="stat-label">${s.l}</div>
+       <div class="stat-value ${s.c}">${s.v}</div>
+       <div class="stat-sub">${s.s}</div>
+     </div>`;
+});
+document.getElementById('invNavBadge').textContent = INV_MAIN.length;
+
+const SBADGE = {
+  '진행 중':'b-blue','성공 (M&A)':'b-teal','성공 (구주 매각)':'b-green','실패 (파산)':'b-red'
+};
+
+function renderInv(data) {
+  const tb = document.getElementById('invTbody');
+  tb.innerHTML = '';
+  data.forEach((inv,idx)=>{
+    const baseName = inv.name.replace(/\(.*?\)/g,'').trim();
+    tb.innerHTML += `<tr>
+      <td style="color:var(--text-tertiary);">${idx+1}</td>
+      <td style="font-weight:600;color:var(--blue-text);cursor:pointer;text-decoration:underline;text-underline-offset:2px;" onclick="openCompanyModal('${baseName}')">${inv.name}</td>
+      <td><span class="badge b-gray">${inv.fund}</span></td>
+      <td><span class="badge b-purple">${inv.type}</span></td>
+      <td style="color:var(--text-secondary);">${fmtD(inv.date)}</td>
+      <td class="nr" style="color:var(--blue);font-weight:600;">${fmtComma(inv.amount)}</td>
+      <td class="nr">${inv.val>0?fmtComma(inv.val):'-'}</td>
+      <td><span class="badge ${SBADGE[inv.status]||'b-gray'}">${inv.status}</span></td>
+    </tr>`;
+  });
+  document.getElementById('invCount').textContent = `총 ${data.length}건`;
+}
+renderInv(INV_MAIN);
+
+function filterInv(){
+  _invFilter = null;
+  document.querySelectorAll('.inv-stat-btn').forEach(b => b.style.outline='none');
+  const q = document.getElementById('invSearch').value.toLowerCase();
+  const fd = document.getElementById('invFund').value;
+  const st = document.getElementById('invStatus').value;
+  renderInv(INV_MAIN.filter(i=>
+    i.name.toLowerCase().includes(q) &&
+    (fd ? i.fund.includes(fd) : true) &&
+    (st ? i.status.includes(st) : true)
+  ));
+}
+
+new Chart(document.getElementById('statusDonut'), {
+  type:'doughnut',
+  data:{
+    labels:['진행 중','성공 (M&A)','성공 (구주 매각)','실패 (파산)'],
+    datasets:[{data:[activeN,INV_MAIN.filter(i=>i.status==='성공 (M&A)').length,INV_MAIN.filter(i=>i.status==='성공 (구주 매각)').length,failN],
+      backgroundColor:['#2563eb','#0d9488','#16a34a','#dc2626'],borderWidth:0}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}
+});
+const sl = document.getElementById('statusLegend');
+[['진행 중','#2563eb'],['성공(M&A)','#0d9488'],['성공(구주)','#16a34a'],['실패(파산)','#dc2626']].forEach(([l,c])=>{
+  sl.innerHTML += `<div class="legend-item"><span class="legend-dot" style="background:${c};"></span>${l}</div>`;
+});
+
+const fMap = {}; INV_MAIN.forEach(i=>{fMap[i.fund]=(fMap[i.fund]||0)+1;});
+const fLabels = Object.keys(fMap);
+new Chart(document.getElementById('fundInvBar'), {
+  type:'bar',
+  data:{labels:fLabels,datasets:[{data:fLabels.map(k=>fMap[k]),backgroundColor:BARCOLS,borderRadius:4}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{ticks:{font:{size:11},color:'#9ca3af'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#9ca3af'},grid:{color:'rgba(0,0,0,0.04)'}}}}
+});
+
+// ─────────────────────────────────────────────────────
+// LP PAGE
+// ─────────────────────────────────────────────────────
+const totalLPAmt = LP.reduce((s,l)=>s+l.amount,0);
+const corpN = LP.filter(l=>l.type==='법인').length;
+const indiN = LP.filter(l=>l.type==='개인').length;
+const investedN = LP.filter(l=>l.amount>0).length;
+
+[
+  {l:'총 LP 수',v:'78명',s:'전체',c:'c-blue'},
+  {l:'개인 LP',v:indiN+'명',s:'개인',c:''},
+  {l:'법인 LP',v:corpN+'명',s:'법인',c:'c-purple'},
+  {l:'총 출자금액',v:fmt(totalLPAmt),s:'누적',c:'c-blue'},
+  {l:'출자 LP',v:investedN+'명',s:'1원 이상 출자',c:'c-green'},
+].forEach(s=>{
+  document.getElementById('lpStats').innerHTML +=
+    `<div class="stat-card"><div class="stat-label">${s.l}</div><div class="stat-value ${s.c}">${s.v}</div><div class="stat-sub">${s.s}</div></div>`;
+});
+
+const topLP = [...LP].sort((a,b)=>b.amount-a.amount).slice(0,4);
+const avatarColors = ['#eff6ff,#1d4ed8','#f0fdf4,#15803d','#f5f3ff,#6d28d9','#fffbeb,#b45309'];
+const topG = document.getElementById('lpTopGrid');
+topLP.forEach((lp,i)=>{
+  const [bg,fg] = avatarColors[i].split(',');
+  const initials = lp.name.replace(/[()주]/g,'').slice(0,2);
+  topG.innerHTML += `
+    <div class="lp-top-card">
+      <div class="lp-avatar" style="background:${bg};color:${fg};">${initials}</div>
+      <div>
+        <div class="lp-top-name">${lp.name}</div>
+        <div class="lp-top-type">${lp.type}</div>
+        <div class="lp-top-amt">${fmt(lp.amount)}</div>
+      </div>
+    </div>`;
+});
+
+function renderLP(data){
+  const tb = document.getElementById('lpTbody');
+  tb.innerHTML='';
+  data.forEach((lp,i)=>{
+    tb.innerHTML += `<tr>
+      <td style="color:var(--text-tertiary);">${i+1}</td>
+      <td style="font-weight:600;">${lp.name}</td>
+      <td><span class="badge ${lp.type==='법인'?'b-purple':'b-blue'}">${lp.type}</span></td>
+      <td class="nr" style="color:var(--blue);font-weight:600;">${lp.amount>0?fmt(lp.amount):'-'}</td>
+      <td><span class="badge ${lp.amount>0?'b-green':'b-gray'}">${lp.amount>0?'출자':'미출자'}</span></td>
+    </tr>`;
+  });
+  document.getElementById('lpCount').textContent = `총 ${data.length}명`;
+}
+renderLP(LP);
+
+function filterLP(){
+  const q = document.getElementById('lpSearch').value.toLowerCase();
+  const tp = document.getElementById('lpType').value;
+  const am = document.getElementById('lpAmt').value;
+  renderLP(LP.filter(l=>{
+    const nm = l.name.toLowerCase().includes(q);
+    const t = tp ? l.type===tp : true;
+    const a = am==='high'?l.amount>=100000000:am==='low'?(l.amount>0&&l.amount<100000000):am==='zero'?l.amount===0:true;
+    return nm&&t&&a;
+  }));
+}
+
+document.getElementById('invCount').textContent = `총 ${INV_MAIN.length}건`;
+document.getElementById('lpCount').textContent = `총 ${LP.length}명`;
+
+// ─────────────────────────────────────────────────────
+// COMPANY MODAL DATA & FUNCTIONS
+// ─────────────────────────────────────────────────────
+const COMPANIES = {
+  '유비스랩':{대표자:'황건우',설립일:'2017.06.09',사업자번호:'540-81-00701',연락처:'010-4795-7495',이메일:'kanu@ubeeslab.com'},
+  '클로넷코퍼레이션':{대표자:'차주환',설립일:'2019.11.06',사업자번호:'154-81-01509',연락처:'010-6631-3230',이메일:'wnghksck@naver.com'},
+  '리뉴어스랩':{대표자:'이재용',설립일:'2022.09.01',사업자번호:'616-88-02422',연락처:'010-8468-7580',이메일:'ceo@renewearth-lab.com'},
+  '모아이스':{대표자:'이용근',설립일:'2019.02.20',사업자번호:'458-87-01325',연락처:'010-7239-7858',이메일:'yong@moais.co.kr'},
+  '마요코퍼레이션':{대표자:'최진환',설립일:'2021.08.02',사업자번호:'390-86-02109',연락처:'010-9457-2395',이메일:'romeo2395@daum.net'},
+  '오렌지닷볼네트워크':{대표자:'윤현중',설립일:'2019.01.01',사업자번호:'769-87-01467',이메일:'kpak@ceeya.io'},
+  '남도마켓':{대표자:'양승우',설립일:'2020.08.07',사업자번호:'735-81-01889',연락처:'010-7455-0065',이메일:'ysw@ndmarket.co.kr'},
+  '쿼타랩':{대표자:'최동현',이메일:'andy@quotabook.com'},
+  '수센캐럿츠':{대표자:'김수현',설립일:'2020.10.29',사업자번호:'437-86-01898',연락처:'010-4010-4288',이메일:'soo@sooandcarrots.com'},
+  'Argos':{대표자:'이원규',이메일:'qlee@argoskyc.com'},
+  'D.TO':{대표자:'이영진, 이주헌',이메일:'youngjin.lee@dtoaec.com'},
+  '루미글루':{대표자:'강인구',설립일:'2021.06.07',사업자번호:'686-87-02123',연락처:'010-4197-5896',이메일:'ingu@lumigloo.com'},
+  '빅쏠':{대표자:'이종석',설립일:'2017.04.28',사업자번호:'886-88-00697',연락처:'010-2019-7292',이메일:'ceo@bigsol.co.kr'},
+  '리조트피플':{대표자:'김태호',설립일:'2019.07.15',사업자번호:'586-86-01375',연락처:'010-3125-8936',이메일:'ceo@resortpeople.net'},
+  '어뎁션':{대표자:'정덕희',설립일:'2018.01.01',사업자번호:'783-87-00988',연락처:'010-4593-0810',이메일:'michael@adaption.xyz'},
+  '위밋':{대표자:'강귀선',설립일:'2017.05.31',사업자번호:'806-87-00694',연락처:'010-9050-3377',이메일:'ceo@wemeetmobility.com'},
+  '빌리어네어즈':{대표자:'조현호',설립일:'2020.06.25',사업자번호:'656-81-01664',연락처:'010-9125-1372',이메일:'leo@therich.io'},
+  '쏌핏':{대표자:'박소현',설립일:'2022.02.23',사업자번호:'119-87-09820',연락처:'010-8390-1727',이메일:'sohyun.park@sofit.kr'},
+  'Goodgang labs':{대표자:'안두경',연락처:'010-7672-8098',이메일:'dookyung@goodganglabs.com'},
+  '딜리버스':{대표자:'김용재',설립일:'2021.03.25',사업자번호:'458-87-02120',연락처:'010-9406-3987',이메일:'yjkim@delivus.co.kr'},
+  '마이프랜차이즈':{대표자:'김준용',설립일:'2019.11.01',사업자번호:'584-87-01610',연락처:'010-2001-6921',이메일:'junyong@myfranchise.kr'},
+  '고레로보틱스':{대표자:'이동민',설립일:'2023.08.28',사업자번호:'119-88-03046',연락처:'010-7752-5343',이메일:'ldm@golerobotics.com'},
+  '태거스':{대표자:'진희종',설립일:'2017.02.23',사업자번호:'516-81-00635',연락처:'010-2036-9773',이메일:'heejong.jin@taggers.io'},
+  '알세미':{대표자:'조현보',설립일:'2019.08.08',사업자번호:'264-87-01467',연락처:'010-9413-1905',이메일:'hyunbo.cho@alsemy.com'},
+  '비사이드코리아':{대표자:'임성철',설립일:'2021.09.13',사업자번호:'174-87-02329',연락처:'010-3370-1673',이메일:'zet@bside.ai'},
+  '언디파인드':{대표자:'하태영',설립일:'2019.04.26',사업자번호:'622-81-27720',연락처:'010-9238-8740',이메일:'aeolianz@hanmail.net'},
+  '크래프타':{대표자:'김강민',설립일:'2020.12.15',사업자번호:'175-86-01914',연락처:'010-8708-0206',이메일:'kangmin.kim527@gmail.com'},
+  '디네이처':{대표자:'홍창익',설립일:'2016.12.01',사업자번호:'303-88-00606',연락처:'010-9788-3151',이메일:'paulhong@d-nature.co.kr'},
+  '준컴퍼니':{대표자:'박근영',설립일:'2019.01.02',사업자번호:'222-87-01110',연락처:'010-4180-5755',이메일:'pky@carlab.kr'},
+  '엑스크루':{대표자:'곁상준',설립일:'2020.11.27',사업자번호:'850-81-01913',연락처:'010-7638-7179',이메일:'ceo@xcrew.co.kr'},
+  '더트라이브':{대표자:'이현복',설립일:'2016.12.10',사업자번호:'552-87-00496',연락처:'010-6411-6864',이메일:'minsoojeon@thetrive.com'},
+  '팀스케어':{대표자:'이정주',설립일:'2025.01.13',사업자번호:'584-81-03504',연락처:'010-6660-0979',이메일:'founder@finth.care'},
+  '안가본길':{대표자:'김경준, 김영선',설립일:'2019.12.01',사업자번호:'404-88-01631',연락처:'010-9016-8616',이메일:'kjkim@hanson5.com'},
+  '세컨드유레카':{대표자:'성중헌, 김명범',설립일:'2020.02.17',사업자번호:'173-81-01816',연락처:'010-4106-0639',이메일:'ceo_galmack@2ndeureka.com'},
+  '페이히어':{대표자:'박준기',설립일:'2019.08.01',사업자번호:'861-81-01475',연락처:'010-8527-2930',이메일:'jungipark@payhere.in'},
+  '매월매주':{대표자:'손종찬',설립일:'2021.02.15',사업자번호:'706-81-01917',연락처:'010-3684-5395',이메일:'jcsohn@mewolmejoo.com'},
+  '매일새옷':{대표자:'서동광',설립일:'2022.09.05',사업자번호:'285-87-02712',연락처:'010-7123-7722',이메일:'seven@ondelab.com'},
+  '21그램 그룹':{대표자:'권신구',설립일:'2017.01.18',사업자번호:'362-81-00571',연락처:'010-3340-3384',이메일:'sk.kwon@21gramcompany.com'},
+  '테너터스':{대표자:'이태휘',설립일:'2017.06.27',사업자번호:'440-87-00742',연락처:'010-8970-1917',이메일:'yhkim@tenetus.com'},
+  '플레어락스':{대표자:'김민혁',설립일:'2022.04.25',사업자번호:'865-81-02535',연락처:'010-8783-6087',이메일:'mh.kim@flarelane.com'},
+  '나니아락스':{대표자:'강남우',설립일:'2022.04.05',사업자번호:'191-88-02340',연락처:'010-3237-4330',이메일:'nwkang@narnia.ai'},
+  '모히또게임즈':{대표자:'한성현',설립일:'2018.10.01',사업자번호:'256-88-01255',이메일:'wind@mojitogames.com'},
+  '심플컴퍼니':{대표자:'신광현',설립일:'2023.08.18',사업자번호:'120-88-29143',연락처:'010-8937-8395',이메일:'matt@ssim.pl'},
+  '비랙트':{대표자:'이원제',설립일:'2022.06.01',사업자번호:'411-88-02619',연락처:'010-9312-4732',이메일:'wade.once@berapt.com'},
+  '풀락':{대표자:'김범수',설립일:'2019.01.18',사업자번호:'436-81-01323',연락처:'010-4002-9421',이메일:'ceo@poollab.kr'},
+  '웜바이':{대표자:'정홍래',설립일:'2018.10.04',사업자번호:'759-87-01024'},
+  '숫자쏙컴퍼니':{대표자:'김희빈',설립일:'2020.09.18',사업자번호:'882-86-01822',연락처:'010-2678-0483',이메일:'1@ssong.me'},
+  '스위그':{대표자:'서경민',설립일:'2023.01.05',사업자번호:'476-86-02913',연락처:'010-8297-0157',이메일:'kmseo@swyg.im'},
+  '티제이락스':{대표자:'이택진',설립일:'2021.04.07',사업자번호:'816-86-01941',연락처:'010-4153-0621',이메일:'tony@tjlabscorp.com'},
+  '서사':{대표자:'이민희, 정도성',설립일:'2019.10.30',사업자번호:'773-88-01352',연락처:'010-2494-9948',이메일:'daoxing@seosa.co.kr'},
+  '같다':{대표자:'고재성',설립일:'2018.03.28',사업자번호:'287-87-01121',연락처:'010-9201-1171',이메일:'james.ko@gatda.com'},
+  'Ceeya':{대표자:'이기상',이메일:'kpak@ceeya.io'},
+  '물랑드서울':{대표자:'선윤아',설립일:'2024.09.12',사업자번호:'778-87-03343',연락처:'010-4067-9847',이메일:'yuna.sun@moulindeseoul.com'},
+  '오물래':{대표자:'강민기',설립일:'2018.04.24',사업자번호:'163-86-01089',연락처:'010-2477-6002',이메일:'mkkang@omolle.com'},
+  '필드멘토':{대표자:'김지훈',설립일:'2021.02.01',사업자번호:'343-81-01910',연락처:'010-2368-2266',이메일:'jihun.kim@fieldmentor.co.kr'},
+  '뉴메스':{대표자:'윤대명',설립일:'2024.06.18',사업자번호:'327-81-03196',연락처:'010-9135-6111',이메일:'eric@newmes.io'},
+  '론픽':{대표자:'백준영',설립일:'2016.02.22',사업자번호:'287-88-00245',연락처:'010-3831-0076',이메일:'ceo@ronfic.com'},
+  '하이브':{대표자:'신동현',설립일:'2019.05.22',사업자번호:'753-87-01216',이메일:'dh.shin@hibee.com'},
+  '위밋모빌리티':{대표자:'강귀선',연락처:'010-9050-3377',이메일:'ceo@wemeetmobility.com'},
+  '레이챔블루':{대표자:'김종호',설립일:'2020.03.09',사업자번호:'710-81-02012',연락처:'010-3782-4452',이메일:'alain@rachelblue.com'},
+  '링크루트':{대표자:'이현호',설립일:'2025.04.02',사업자번호:'855-87-03446',연락처:'010-4394-7500',이메일:'lee@linkroute.co.kr'},
+  '브이드림':{대표자:'김민지',설립일:'2018.01.25',사업자번호:'186-86-00972',연락처:'010-4051-6655',이메일:'kmj@vdream.co.kr'},
+  '굳갱랩스':{연락처:'010-7672-8098',이메일:'dookyung@goodganglabs.com'},
+  '인디펜던트':{대표자:'윤지환',설립일:'2019.05.14',사업자번호:'312-86-78370',연락처:'010-2519-7876',이메일:'red@ngym.co.kr'},
+  '큐팝':{대표자:'최동혁',설립일:'2025.01.03',사업자번호:'486-87-03560',연락처:'010-3313-6933',이메일:'choi@cutib.com'},
+  '에이아이링고':{대표자:'이재웅',설립일:'2020.03.19',사업자번호:'727-86-01734',연락처:'010-3751-6800',이메일:'jailee@ailinggo.ai'},
+  '백스테이션':{대표자:'이승홍',설립일:'2018.08.18',사업자번호:'123-87-01166',연락처:'010-7456-9932',이메일:'noah@bagstation.io'},
+  '빅셀글로벌':{대표자:'이강로',설립일:'2021.07.07',사업자번호:'208-86-02402',연락처:'010-8910-5998',이메일:'lkn828282@gmail.com'},
+  '퍼플러스':{대표자:'박은정',설립일:'2018.02.26',사업자번호:'602-81-68504',연락처:'010-9927-7977',이메일:'ejpark@purpluskr.com'},
+  '아르고노트에이아이':{대표자:'배병윤',설립일:'2025.02.26',사업자번호:'102-81-48143',연락처:'010-2215-1035',이메일:'baeby@argonautai.co.kr'},
+  '티라움':{대표자:'조원진',설립일:'2019.05.03',사업자번호:'617-86-28343',연락처:'010-4033-8189',이메일:'traumlab306@gmail.com'},
+  '브리즈랩':{},
+  '케이뷰티월드와이드':{대표자:'위대성, 이석주',설립일:'2019.07.11',사업자번호:'137-88-01328',연락처:'010-8463-1263',이메일:'daesung.wi@kbww.kr'},
+  '디지털뉴트리션':{대표자:'김나영',설립일:'2022.03.18',사업자번호:'807-81-02446',연락처:'010-2623-6222',이메일:'official@digitalnutrition.info'},
+  '오늘의픽업':{대표자:'진승민',설립일:'2020.07.01',사업자번호:'322-87-01759',연락처:'010-5005-1452',이메일:'smjin@todaypickup.cafe24.com'},
+  '클리카':{대표자:'김나율',연락처:'010-8472-1008',이메일:'nayul@clika.io'},
+  '닫닫닫':{대표자:'윤용기, 장준수',설립일:'2018.01.22',사업자번호:'856-88-00866',연락처:'010-7751-3328',이메일:'yyoon@dotdotdot.link'},
+  '엠투에스':{},
+};
+
+const FINANCIALS = {};
+[
+  {c:'유비스랩',y:2025,k:2437628210,d:1034360906,r:1078591732,n:2118436},
+  {c:'유비스랩',y:2024,k:2285480531,d:1108315925,r:1036348758,n:1185147},
+  {c:'유비스랩',y:2023,k:1161976149,d:1133669660,r:449375140,n:-353475},
+  {c:'유비스랩',y:2022,k:1162329624,d:1114660973,r:634343452,n:422067},
+  {c:'리뉴어스랩',y:2025,k:28409608,d:452738948,r:61131336,n:-222507978},
+  {c:'리뉴어스랩',y:2024,k:51379318,d:147807259,r:48800000,n:-159397436},
+  {c:'모아이스',y:2025,k:2392167298,d:846376566,r:2227487812,n:-1217216700},
+  {c:'모아이스',y:2024,k:1583736745,d:804015407,r:1685314639,n:-493325284},
+  {c:'모아이스',y:2023,k:2077062029,d:669379419,r:1343179081,n:-391515209},
+  {c:'모아이스',y:2022,k:2592818209,d:194256282,r:385500800,n:-180747687},
+  {c:'마요코퍼레이션',y:2025,k:-352968615,d:981467363,r:350906361,n:-66010718},
+  {c:'마요코퍼레이션',y:2024,k:-286957897,d:798353693,r:336551853,n:928844},
+  {c:'오렌지닷볼네트워크',y:2025,k:320932745,d:541625710,r:278753538,n:121193432},
+  {c:'오렌지닷볼네트워크',y:2024,k:199739313,d:531002940,r:230228025,n:145247437},
+  {c:'오렌지닷볼네트워크',y:2023,k:55912386,d:497906569,r:100050865,n:-239911194},
+  {c:'오렌지닷볼네트워크',y:2022,k:-4178546,d:225604768,r:38877271,n:-333196640},
+  {c:'남도마켓',y:2025,k:3028012197,d:3619513827,r:22407688587,n:433673063},
+  {c:'남도마켓',y:2024,k:1299792422,d:2067009175,r:4440463375,n:56101807},
+  {c:'남도마켓',y:2023,k:943707727,d:1666966696,r:2741482770,n:24539785},
+  {c:'쿼타랩',y:2025,k:6322686839,d:26163254846,r:728544746,n:-190811497},
+  {c:'쿼타랩',y:2024,k:10416736339,d:22439667029,r:689757588,n:-815612070},
+  {c:'쿼타랩',y:2023,k:11275585280,d:22336006354,r:415539871,n:-5840053134},
+  {c:'수센캐럿츠',y:2025,k:734123781,d:435756039,r:922738765,n:521876963},
+  {c:'수센캐럿츠',y:2024,k:12704538,d:418308188,r:235980191,n:-46938098},
+  {c:'Argos',y:2025,k:-1811504,d:2369570,r:262718,n:-7787754},
+  {c:'Argos',y:2024,k:-1059916,d:1435153,r:146159,n:-714163},
+  {c:'Argos',y:2023,k:-348357,d:970943,r:0,n:-348357},
+  {c:'리조트피플',y:2025,k:6937813992,d:8485980231,r:16919129402,n:1922894695},
+  {c:'리조트피플',y:2024,k:5029309079,d:5446876731,r:12412303743,n:761117316},
+  {c:'리조트피플',y:2023,k:3507596202,d:4645881583,r:8790588233,n:128830616},
+  {c:'리조트피플',y:2022,k:330656819,d:3374901275,r:6290767978,n:-590341266},
+  {c:'어뎁션',y:2025,k:292159380,d:192500573,r:875000000,n:57773953},
+  {c:'어뎁션',y:2024,k:317269827,d:232790763,r:811836697,n:-62997131},
+  {c:'어뎁션',y:2023,k:340653548,d:263889482,r:784593636,n:-11101535},
+  {c:'어뎁션',y:2022,k:351755083,d:286803515,r:932850000,n:277682315},
+  {c:'빌리어네어즈',y:2025,k:-190419870,d:441468467,r:692111451,n:21070206},
+  {c:'빌리어네어즈',y:2024,k:-213470076,d:358166721,r:657874977,n:114844593},
+  {c:'쏌핏',y:2025,k:77020257,d:663027730,r:1621656101,n:-97414400},
+  {c:'딜리버스',y:2025,k:823120337,d:5557897541,r:10618700785,n:-7601815537},
+  {c:'딜리버스',y:2024,k:8425187874,d:2713963337,r:5898381865,n:-6557136863},
+  {c:'딜리버스',y:2023,k:308308246,d:2244973981,r:3067367154,n:-4415220127},
+  {c:'딜리버스',y:2022,k:132808373,d:837752588,r:996600107,n:-2704744148},
+  {c:'마이프랜차이즈',y:2025,k:2416596967,d:1630131831,r:2022625822,n:-1803996008},
+  {c:'마이프랜차이즈',y:2024,k:4220442975,d:710563707,r:1952273443,n:-1870716410},
+  {c:'마이프랜차이즈',y:2023,k:6081479395,d:461060773,r:2649383491,n:-2952479664},
+  {c:'마이프랜차이즈',y:2022,k:9003521559,d:293749710,r:1616227718,n:-2425907713},
+  {c:'고레로보틱스',y:2025,k:3870936658,d:180406771,r:604405000,n:-2026253926},
+  {c:'고레로보틱스',y:2024,k:5897190584,d:308887210,r:255000000,n:-787934856},
+  {c:'고레로보틱스',y:2023,k:985172940,d:40171755,r:75000000,n:-264827060},
+  {c:'알세미',y:2025,k:197887766,d:1036923634,r:1941529928,n:-1211042950},
+  {c:'알세미',y:2024,k:908978816,d:1202935264,r:1416031362,n:-1605824481},
+  {c:'알세미',y:2023,k:1314918737,d:878378420,r:470000000,n:-2547311954},
+  {c:'알세미',y:2022,k:3862230691,d:896173231,r:26363636,n:-2207915113},
+  {c:'비사이드코리아',y:2025,k:3455382158,d:45318247,r:1731705057,n:38062384},
+  {c:'비사이드코리아',y:2024,k:1173786532,d:45793807,r:1112259735,n:336718451},
+  {c:'언디파인드',y:2025,k:-784989908,d:793709217,r:0,n:-10102149},
+  {c:'언디파인드',y:2024,k:-774887759,d:793709217,r:0,n:-24872},
+  {c:'언디파인드',y:2023,k:-774862887,d:793691606,r:0,n:-63146558},
+  {c:'언디파인드',y:2022,k:-711716329,d:792278872,r:51530000,n:-523587854},
+  {c:'크래프타',y:2025,k:-608011017,d:644073077,r:424556601,n:-259515711},
+  {c:'크래프타',y:2024,k:-348495306,d:436406728,r:269719518,n:-103499425},
+  {c:'크래프타',y:2023,k:-242886401,d:350259212,r:316929651,n:114385595},
+  {c:'크래프타',y:2022,k:-128500806,d:214175660,r:123476176,n:334677406},
+  {c:'디네이처',y:2023,k:-631707836,d:1187813580,r:116172601,n:-521427308},
+  {c:'디네이처',y:2022,k:-110280528,d:736200277,r:60459375,n:-468989211},
+  {c:'준컴퍼니',y:2025,k:928280855,d:1506813725,r:7103349602,n:108067013},
+  {c:'준컴퍼니',y:2024,k:820213842,d:1266744473,r:5052015227,n:-119257808},
+  {c:'준컴퍼니',y:2023,k:1029856824,d:940390965,r:3081596648,n:87673784},
+  {c:'준컴퍼니',y:2022,k:202202750,d:982134033,r:1878733448,n:109856619},
+  {c:'엑스크루',y:2025,k:909433291,d:1020377333,r:1508648908,n:125942487},
+  {c:'엑스크루',y:2024,k:783490804,d:1005364778,r:1167125730,n:38283479},
+  {c:'엑스크루',y:2023,k:745207325,d:929595979,r:999041943,n:23160804},
+  {c:'엑스크루',y:2022,k:322032854,d:481742117,r:999133759,n:-67680325},
+  {c:'더트라이브',y:2025,k:1907834352,d:9240601530,r:14933143307,n:1516344000},
+  {c:'더트라이브',y:2024,k:-719004618,d:11464774714,r:8705143857,n:-2415690880},
+  {c:'더트라이브',y:2023,k:1696686262,d:14932060257,r:9071329149,n:-4196861339},
+  {c:'더트라이브',y:2022,k:5897462874,d:19700085897,r:10761365281,n:-3932355470},
+  {c:'팀스케어',y:2025,k:240165846,d:2477470,r:20630240,n:-149834154},
+  {c:'세컨드유레카',y:2024,k:-109727889,d:1012554917,r:1042410659,n:6463965},
+  {c:'페이히어',y:2025,k:2189828334,d:12625866397,r:14511638889,n:-13674243141},
+  {c:'페이히어',y:2024,k:7574159371,d:9547553734,r:13384965587,n:-19115422741},
+  {c:'페이히어',y:2023,k:11090364739,d:8088898487,r:11320584363,n:-15338580838},
+  {c:'페이히어',y:2022,k:6420728890,d:1615629669,r:6212186370,n:-6294389336},
+  {c:'매월매주',y:2025,k:369549347,d:107751279,r:266120223,n:6141993},
+  {c:'매월매주',y:2024,k:363407354,d:125094765,r:159647591,n:-17115763},
+  {c:'매월매주',y:2023,k:80195784,d:88132957,r:26397721,n:-845038},
+  {c:'매일새옷',y:2025,k:268882592,d:1002684593,r:1267095770,n:183675812},
+  {c:'21그램 그룹',y:2024,k:115697996,d:4384917568,r:6130502029,n:-3039992254},
+  {c:'21그램 그룹',y:2023,k:3155690250,d:3168350836,r:4329812719,n:-3456949153},
+  {c:'테너터스',y:2025,k:3094648976,d:2777662773,r:160636364,n:-1249521966},
+  {c:'테너터스',y:2024,k:4234170942,d:2662231280,r:353709091,n:-1814898150},
+  {c:'테너터스',y:2023,k:4072988592,d:3104628334,r:356063953,n:-2202344334},
+  {c:'나니아락스',y:2025,k:4358622548,d:84675060,r:1380172727,n:-1184559559},
+  {c:'나니아락스',y:2024,k:2507265834,d:71943011,r:1055827273,n:-906386949},
+  {c:'나니아락스',y:2023,k:3413652783,d:25966388,r:351700000,n:-389769954},
+  {c:'나니아락스',y:2022,k:303479321,d:15388630,r:134000000,n:47920569},
+  {c:'백스테이션',y:2022,k:-306944123,d:457385741,r:-6281736,n:null},
+  {c:'빅셀글로벌',y:2025,k:815938582,d:1012436069,r:591115239,n:415421289},
+  {c:'빅셀글로벌',y:2024,k:1231359871,d:1420736174,r:2774461074,n:-11744584},
+  {c:'퍼플러스',y:2023,k:1282004449,d:2561206395,r:4621450749,n:384480200},
+  {c:'퍼플러스',y:2022,k:538830027,d:1810578379,r:2783960836,n:2094283285},
+  {c:'아르고노트에이아이',y:2025,k:167242421,d:61653401,r:523123251,n:-33557579},
+  {c:'스위그',y:2025,k:-26330829,d:134124610,r:105239387,n:-155251834},
+  {c:'스위그',y:2024,k:128921005,d:120635888,r:63556583,n:-103777045},
+  {c:'티제이락스',y:2025,k:-81799157,d:1553307278,r:2010082500,n:365305629},
+  {c:'티제이락스',y:2024,k:-647104786,d:795796690,r:102420000,n:-442382289},
+  {c:'티제이락스',y:2023,k:-204722497,d:672156548,r:33818182,n:-496115569},
+  {c:'티제이락스',y:2022,k:291393072,d:121820482,r:18000000,n:-469080100},
+  {c:'서사',y:2023,k:-1755416617,d:2032744340,r:274495240,n:-821950558},
+  {c:'서사',y:2022,k:-933466059,d:1350583811,r:104914170,n:-1329621909},
+  {c:'같다',y:2025,k:466962591,d:2213178489,r:7700595008,n:-298211646},
+  {c:'같다',y:2024,k:765174237,d:928864721,r:4159360474,n:-483108093},
+  {c:'같다',y:2023,k:-51787683,d:827532306,r:1247812736,n:-1497979454},
+  {c:'같다',y:2022,k:1446191771,d:594254365,r:941931601,n:-1747120244},
+  {c:'필드멘토',y:2025,k:147506077,d:828589005,r:4331264769,n:146104090},
+  {c:'필드멘토',y:2024,k:1401987,d:548562820,r:1657711335,n:-442079669},
+  {c:'필드멘토',y:2023,k:443481656,d:583926233,r:1971654984,n:-107418049},
+  {c:'필드멘토',y:2022,k:150989705,d:61498322,r:815639518,n:361604},
+  {c:'뉴메스',y:2025,k:122197617,d:113272715,r:220895023,n:-178383644},
+  {c:'뉴메스',y:2024,k:302081261,d:22123427,r:86718182,n:1041261},
+  {c:'론픽',y:2025,k:1501145831,d:3949280098,r:5426367628,n:-2533985309},
+  {c:'론픽',y:2024,k:4035131140,d:4047113062,r:4387395807,n:-2267193477},
+  {c:'론픽',y:2023,k:5265082291,d:3130148015,r:3021345372,n:-1016345832},
+  {c:'론픽',y:2022,k:1197036920,d:3150311231,r:1105385881,n:-2097401157},
+  {c:'하이브',y:2025,k:404109335,d:582142805,r:2678441,n:-115550971},
+  {c:'하이브',y:2024,k:519660306,d:489615375,r:23099262,n:-119510550},
+  {c:'하이브',y:2023,k:639170856,d:348954790,r:169471766,n:-275968529},
+  {c:'하이브',y:2022,k:915139385,d:209560094,r:43284,n:-694950687},
+  {c:'위밋모빌리티',y:2023,k:5641270196,d:1512243130,r:271106296,n:-1427886325},
+  {c:'위밋모빌리티',y:2022,k:6069103231,d:1309392095,r:57141392,n:6945686},
+  {c:'레이챔블루',y:2025,k:74225761,d:12903424,r:128912694,n:-155177861},
+  {c:'레이챔블루',y:2024,k:229403622,d:2733266,r:81945656,n:-618436380},
+  {c:'링크루트',y:2025,k:32636659,d:418315869,r:1012366355,n:-97366148},
+  {c:'브이드림',y:2025,k:6170044349,d:2609773305,r:6001810539,n:1208788330},
+  {c:'브이드림',y:2024,k:4961256019,d:2771501342,r:6918317746,n:-502359133},
+  {c:'브이드림',y:2023,k:3963950152,d:1953560394,r:4782128264,n:-554893219},
+  {c:'브이드림',y:2022,k:4518843371,d:1669694591,r:3200011796,n:-1007535015},
+  {c:'굳갱랩스',y:2025,k:346789486,d:60796431,r:1240011608,n:185103420},
+  {c:'굳갱랩스',y:2024,k:161686066,d:77309813,r:1432606846,n:39627450},
+  {c:'인디펜던트',y:2025,k:493564783,d:1215752368,r:3328202462,n:48346368},
+  {c:'인디펜던트',y:2024,k:445218415,d:804429617,r:2989251108,n:102820569},
+  {c:'인디펜던트',y:2023,k:342397846,d:566141204,r:2779276911,n:402503897},
+  {c:'인디펜던트',y:2022,k:25826287,d:462094505,r:1641702303,n:52881039},
+  {c:'에이아이링고',y:2025,k:30573402,d:935832326,r:935011101,n:-195679713},
+  {c:'에이아이링고',y:2024,k:226253115,d:567703414,r:306536208,n:-105693165},
+  {c:'모히또게임즈',y:2023,k:-12701465022,d:14767322669,r:3545554976,n:-5247229474},
+  {c:'모히또게임즈',y:2022,k:-7454235548,d:9809841172,r:5424309991,n:-4814477482},
+  {c:'비랙트',y:2025,k:-484443373,d:612440193,r:146978637,n:-527039223},
+  {c:'비랙트',y:2024,k:42595850,d:507912361,r:45054911,n:-465592342},
+  {c:'풀락',y:2023,k:166307516,d:494060446,r:453215908,n:58096597},
+  {c:'풀락',y:2022,k:108210919,d:517723244,r:183224362,n:1347410},
+  {c:'케이뷰티월드와이드',y:2025,k:619524881,d:364577218,r:909375159,n:5025580},
+  {c:'케이뷰티월드와이드',y:2024,k:614499301,d:455772692,r:581873957,n:-99672520},
+  {c:'케이뷰티월드와이드',y:2023,k:733814108,d:429118838,r:1126166346,n:103359856},
+  {c:'케이뷰티월드와이드',y:2022,k:130451502,d:322956974,r:1110267150,n:118188299},
+  {c:'디지털뉴트리션',y:2025,k:234692227,d:593911696,r:570846694,n:282511843},
+  {c:'디지털뉴트리션',y:2024,k:-47819616,d:667273672,r:219944632,n:63217931},
+  {c:'디지털뉴트리션',y:2023,k:-211037547,d:542057510,r:79253772,n:-281565080},
+  {c:'닫닫닫',y:2025,k:-257426413,d:1720494506,r:110000000,n:-65602610},
+  {c:'닫닫닫',y:2024,k:-191823803,d:1695542205,r:50000000,n:-242024709},
+  {c:'닫닫닫',y:2023,k:4981534,d:1529138651,r:0,n:-3484450091},
+  {c:'닫닫닫',y:2022,k:3489431625,d:1187981483,r:0,n:-1399034229},
+  {c:'Ceeya',y:2024,k:0,d:9000,r:74927,n:-61657},
+].forEach(r => {
+  if (!FINANCIALS[r.c]) FINANCIALS[r.c] = [];
+  FINANCIALS[r.c].push(r);
+});
+
+function openCompanyModal(name) {
+  // 회사명 매칭: 정확히 없으면 부분 포함 검색
+  let co = COMPANIES[name];
+  let matchedName = name;
+  if (!co) {
+    const key = Object.keys(COMPANIES).find(k => k.includes(name) || name.includes(k));
+    if (key) { co = COMPANIES[key]; matchedName = key; }
+    else co = {};
+  }
+  const fins = (FINANCIALS[matchedName] || []).sort((a,b) => b.y - a.y);
+
+  const infoItems = [
+    {l:'대표자', v: co.대표자 || '-'},
+    {l:'법인 설립일', v: co.설립일 || '-'},
+    {l:'사업자번호', v: co.사업자번호 || '-'},
+    {l:'연락처', v: co.연락처 || '-'},
+    {l:'이메일', v: co.이메일 || '-'},
+    {l:'홈페이지', v: co.홈페이지 ? `<a href="${co.홈페이지}" target="_blank" style="color:var(--blue);">${co.홈페이지}</a>` : '-'},
+  ];
+
+  const finRows = fins.length > 0
+    ? fins.map(f => {
+        const kStr = f.k != null ? fmtComma(f.k) : '-';
+        const dStr = f.d != null ? fmtComma(f.d) : '-';
+        const rStr = f.r != null ? fmtComma(f.r) : '-';
+        const nStr = f.n != null
+          ? `<span class="${f.n >= 0 ? 'fin-pos' : 'fin-neg'}">${fmtComma(f.n)}</span>`
+          : '-';
+        return `<tr><td>${f.y}</td><td>${kStr}</td><td>${dStr}</td><td>${rStr}</td><td>${nStr}</td></tr>`;
+      }).join('')
+    : `<tr><td colspan="5" style="text-align:center;color:var(--text-tertiary);padding:16px;">결산 데이터 없음</td></tr>`;
+
+  document.getElementById('modalContent').innerHTML = `
+    <div class="modal-co-name">${name}</div>
+    <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:8px;">회사 기본 정보</div>
+    <div class="modal-info-grid">
+      ${infoItems.map(i=>`<div class="modal-info-item"><div class="modal-info-label">${i.l}</div><div class="modal-info-value">${i.v}</div></div>`).join('')}
+    </div>
+    <div class="modal-section-title">결산/재무 현황</div>
+    <table class="fin-table">
+      <thead><tr><th>연도</th><th>자본총액</th><th>부채총액</th><th>매출액</th><th>당기순이익</th></tr></thead>
+      <tbody>${finRows}</tbody>
+    </table>
+  `;
+  document.getElementById('companyModal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('companyModal').classList.remove('open');
+}
+</script>
+
+<!-- Company Modal -->
+<div class="modal-overlay" id="companyModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-close" onclick="closeModal()">✕</div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+</body>
+</html>
