@@ -396,12 +396,7 @@ tr:hover td { background: #fafeff; }
       </div>
       <div class="live-tag"><span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;"></span>실시간</div>
     </div>
-    <div class="stat-grid" id="lpStats"></div>
-    <div class="card-header" style="background:white;border:1px solid var(--border);border-radius:var(--radius) var(--radius) 0 0;padding:14px 18px;">
-      <span class="card-title">상위 출자자</span>
-      <span class="card-count">출자금액 기준 Top 4</span>
-    </div>
-    <div class="lp-top-grid" style="margin-top:0;border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);background:white;padding:14px;margin-bottom:16px;" id="lpTopGrid"></div>
+    <div id="lpFundStats" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:20px;"></div>
     <div class="card">
       <div class="filter-row">
         <input type="text" id="lpSearch" placeholder="🔍  LP명 검색..." oninput="filterLP()">
@@ -1580,55 +1575,74 @@ new Chart(document.getElementById('fundInvBar'), {
 // ─────────────────────────────────────────────────────
 // LP PAGE
 // ─────────────────────────────────────────────────────
-const totalLPAmt = LP.reduce((s,l)=>s+l.amount,0);
-const corpN = LP.filter(l=>l.type==='법인').length;
-const indiN = LP.filter(l=>l.type==='개인').length;
-const investedN = LP.filter(l=>l.amount>0).length;
 
-[
-  {l:'총 LP 수',v:'78명',s:'전체',c:'c-blue'},
-  {l:'개인 LP',v:indiN+'명',s:'개인',c:''},
-  {l:'법인 LP',v:corpN+'명',s:'법인',c:'c-purple'},
-  {l:'총 출자금액',v:fmt(totalLPAmt),s:'누적',c:'c-blue'},
-  {l:'출자 LP',v:investedN+'명',s:'1원 이상 출자',c:'c-green'},
-].forEach(s=>{
-  document.getElementById('lpStats').innerHTML +=
-    `<div class="stat-card"><div class="stat-label">${s.l}</div><div class="stat-value ${s.c}">${s.v}</div><div class="stat-sub">${s.s}</div></div>`;
+// 조합별 LP 집계 (개인/법인 구분)
+const fundOrder = [
+  '김기사랩투자조합 1호','김기사랩투자조합 2호',
+  '김기사랩투자조합 3호','김기사랩투자조합 4호',
+  '김기사컴퍼니투자조합 1호'
+];
+const fundLPMap = {};
+fundOrder.forEach(f => { fundLPMap[f] = {개인: new Set(), 법인: new Set()}; });
+Object.entries(LP_FUNDS).forEach(([lpName, funds]) => {
+  const lp = LP.find(l => l.name === lpName);
+  const type = lp ? lp.type : '개인';
+  funds.forEach(fund => {
+    if (fundLPMap[fund]) {
+      fundLPMap[fund][type === '법인' ? '법인' : '개인'].add(lpName);
+    }
+  });
 });
 
-const topLP = [...LP].sort((a,b)=>b.amount-a.amount).slice(0,4);
-const avatarColors = ['#eff6ff,#1d4ed8','#f0fdf4,#15803d','#f5f3ff,#6d28d9','#fffbeb,#b45309'];
-const topG = document.getElementById('lpTopGrid');
-topLP.forEach((lp,i)=>{
-  const [bg,fg] = avatarColors[i].split(',');
-  const initials = lp.name.replace(/[()주]/g,'').slice(0,2);
-  topG.innerHTML += `
-    <div class="lp-top-card">
-      <div class="lp-avatar" style="background:${bg};color:${fg};">${initials}</div>
-      <div>
-        <div class="lp-top-name">${lp.name}</div>
-        <div class="lp-top-type">${lp.type}</div>
-        <div class="lp-top-amt">${fmt(lp.amount)}</div>
+const lpFundStatsEl = document.getElementById('lpFundStats');
+fundOrder.forEach((fund, i) => {
+  const data = fundLPMap[fund];
+  const indiCount = data['개인'].size;
+  const corpCount = data['법인'].size;
+  const total = indiCount + corpCount;
+  lpFundStatsEl.innerHTML += `
+    <div class="stat-card">
+      <div class="stat-label" style="font-size:11px;font-weight:600;color:var(--blue-text);margin-bottom:6px;">${fund}</div>
+      <div class="stat-value" style="font-size:20px;">${total}명</div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+        <span class="badge b-blue">개인 ${indiCount}명</span>
+        <span class="badge b-purple">법인 ${corpCount}명</span>
       </div>
     </div>`;
 });
+
+// LP별 조합별 출자금액 합산 (LP_INVESTMENTS 기준)
+function getLPFundAmounts(lpName) {
+  const investments = LP_INVESTMENTS[lpName] || [];
+  const result = {};
+  investments.forEach(inv => {
+    if (!result[inv.fund]) result[inv.fund] = 0;
+    result[inv.fund] += inv.amount;
+  });
+  return result;
+}
 
 function renderLP(data){
   const tb = document.getElementById('lpTbody');
   tb.innerHTML='';
   data.forEach((lp,i)=>{
     const funds = LP_FUNDS[lp.name] || [];
-    const fundBadges = funds.length > 0
+    const fundAmounts = getLPFundAmounts(lp.name);
+    const fundRows = funds.length > 0
       ? funds.map(f => {
-          const short = f.replace('김기사랩투자조합 ','').replace('김기사컴퍼니투자조합 ','컴퍼니');
-          return `<span class="badge b-gray" style="margin-right:3px;">${short}</span>`;
+          const amt = fundAmounts[f] || 0;
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;gap:12px;">
+            <span style="font-size:11px;color:var(--text-primary);white-space:nowrap;">${f}</span>
+            <span style="font-size:11px;font-weight:600;color:var(--blue);white-space:nowrap;">${amt > 0 ? fmt(amt) : '-'}</span>
+          </div>`;
         }).join('')
       : '<span style="color:var(--text-tertiary);font-size:12px;">-</span>';
+    const safeName = lp.name.replace(/'/g, "\\'");
     tb.innerHTML += `<tr>
-      <td style="font-weight:600;color:var(--blue-text);cursor:pointer;white-space:nowrap;" onclick="openLPModal('${lp.name.replace(/'/g,"\'")}')"><u>${lp.name}</u></td>
-      <td><span class="badge ${lp.type==='법인'?'b-purple':'b-blue'}" style="white-space:nowrap;">${lp.type}</span></td>
-      <td style="white-space:normal;">${fundBadges}</td>
-      <td><span class="badge ${lp.amount>0?'b-green':'b-gray'}">${lp.amount>0?'출자':'미출자'}</span></td>
+      <td style="font-weight:600;color:var(--blue-text);cursor:pointer;white-space:nowrap;vertical-align:top;" onclick="openLPModal('${safeName}')"><u>${lp.name}</u></td>
+      <td style="vertical-align:top;"><span class="badge ${lp.type==='법인'?'b-purple':'b-blue'}" style="white-space:nowrap;">${lp.type}</span></td>
+      <td style="min-width:280px;">${fundRows}</td>
+      <td style="vertical-align:top;"><span class="badge ${lp.amount>0?'b-green':'b-gray'}">${lp.amount>0?'출자':'미출자'}</span></td>
     </tr>`;
   });
   document.getElementById('lpCount').textContent = `총 ${data.length}명`;
@@ -1958,12 +1972,8 @@ function openLPModal(name) {
   const investments = LP_INVESTMENTS[name] || [];
   const funds = LP_FUNDS[name] || [];
 
-  // 참여 조합별 합산
-  const fundSums = {};
-  investments.forEach(inv => {
-    if (!fundSums[inv.fund]) fundSums[inv.fund] = 0;
-    fundSums[inv.fund] += inv.amount;
-  });
+  // 참여 조합별 합산 (getLPFundAmounts 이용)
+  const fundSums = getLPFundAmounts(name);
   const totalAmt = investments.reduce((s,i) => s + i.amount, 0);
 
   const infoItems = [
