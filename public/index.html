@@ -380,7 +380,7 @@ tr:hover td { background: #fafeff; }
       <div class="tw"><table>
         <thead><tr>
           <th>#</th><th>회사명</th><th>조합</th><th>유형</th><th>투자일</th>
-          <th class="nr">투자금액</th><th class="nr">기업가치</th><th>상태</th>
+          <th class="nr">투자금액</th><th class="nr">기업가치</th><th>상태</th><th style="text-align:center;">TIPS</th>
         </tr></thead>
         <tbody id="invTbody"></tbody>
       </table></div>
@@ -1196,14 +1196,72 @@ INV.forEach(inv => {
   }
 });
 
+
+// ─────────────────────────────────────────────────────
+// TIPS 데이터 (Airtable TIPS 테이블 기준)
+// ─────────────────────────────────────────────────────
+const TIPS_SET = new Set([
+  '서사','스위그','티제이락스','빌리어네어즈','에이아이링고','오렌지닷볼네트워크',
+  '비랙트','케이뷰티월드와이드','D.TO','비사이드코리아','풀락','굳갱랩스','엑스크루',
+  '필드멘토','디지털뉴트리션','클리카','쏌핏','심플컴퍼니','태거스','마이프랜차이즈',
+  '같다','알세미','페이히어','오물래','오늘의픽업','언디파인드','엔투에스',
+  '브이드림','안가본길','레이챔블루','클로넷코퍼레이션','빅쏠',
+  '에이아이링고','링크루트','아르고노트에이아이','고레로보틱스','뉴메스','매월매주','매일새옷',
+  '리뉴어스랩','수센캐럿츠','굳갱랩스','플레어락스','준컴퍼니',
+  '오렌지닷볼네트워크','빅쏠','빅쏠','비사이드코리아',
+]);
+
+const TIPS_DATA = {
+  '스위그':{상태:'진행 중',시작:'2024.11.01',종료:'2026.10.31',과제:'AI 기반 기업용 개발 프로젝트 관리 솔루션'},
+  '티제이락스':{상태:'완료 (보통)',시작:'2021.10.01',종료:'2023.09.30',과제:'실내 위치인식을 위한 히스토리 데이터 기반의 Surface Correlation Cloud Platform 개발'},
+  '마이프랜차이즈':{상태:'완료 (보통)',시작:'2020.04.01',종료:'2022.03.31',과제:'프랜차이즈 산업의 정보 비대칭을 해결하는 빅데이터 기반 창업 플랫폼 개발'},
+  '뉴메스':{상태:'진행 중',시작:'',종료:'',과제:''},
+  '페이히어':{상태:'',시작:'2020.08.21',종료:'2022.08.22',과제:'Cloud Native POS 고도화 및 통합 매장관리 플랫폼 개발'},
+  '매월매주':{상태:'진행 중',시작:'',종료:'',과제:''},
+  '빌리어네어즈':{상태:'실패 (미흡)',시작:'2021.07.01',종료:'2023.06.30',과제:'금융 빅데이터를 활용한 자산 포트폴리오 시뮬레이션 및 추천 알고리즘'},
+  '심플컴퍼니':{상태:'실패 (미흡)',시작:'',종료:'',과제:'크리에이터의 OTA 전환을 돕는 AI 기반 OTA 비즈니스 솔루션 개발'},
+  '오렌지닷볼네트워크':{상태:'사후평가 중',시작:'',종료:'',과제:'컴퓨터 비전을 활용한 3D 콘텐츠 개발 및 개인 프로그램 제공'},
+  '에이아이링고':{상태:'진행 중',시작:'',종료:'',과제:'RAG 기술을 활용한 법률 영역 특화 Global 언어 분석 및 사용자 맞춤형 번역 솔루션 개발'},
+  '비사이드코리아':{상태:'완료 (보통)',시작:'',종료:'',과제:'주주 인증, 결집 및 실행이 가능한 주주 행동주의 플랫폼 개발'},
+  '비랙트':{상태:'사후평가 중',시작:'2023.05.01',종료:'2025.04.30',과제:'커뮤니티 사용자 데이터를 기반으로 한 가상 PD 시스템'},
+  '브이드림':{상태:'완료 (보통)',시작:'2019.10.11',종료:'2021.10.10',과제:'직무데이터 기반 맞춤형 장애인 인사관리 솔루션 플랫폼'},
+  '같다':{상태:'선정 실패',시작:'2020.08.01',종료:'2022.07.31',과제:'AI 기술을 활용한 비대면 모바일 폐기물 수거신청·수거 서비스'},
+  '굳갱랩스':{상태:'완료 (보통)',시작:'',종료:'',과제:'메타버스 아바타 커뮤니케이션 플랫폼'},
+  '알세미':{상태:'완료 (보통)',시작:'2020.09.22',종료:'2022.09.21',과제:'인공신경망 모델을 통한 반도체 회로 시뮬레이션을 위한 제품화(ALI) 기술개발'},
+  'D.TO':{상태:'사후평가 중',시작:'2023.03.01',종료:'2025.02.28',과제:'인간중심 이미지합성 딥 러닝을 활용한 건축 디자인 마케팅 통합 플랫폼'},
+  '준컴퍼니':{상태:'선정 실패',시작:'',종료:'',과제:'온라인 3D 자동차전시장 구축&실거래 데이터 기반 신차할인금액 AI 예측시스템'},
+  '레이챔블루':{상태:'',시작:'',종료:'',과제:'지속가능소비의 확산을 위한 상품 환경영향평가 기반의 커머스 플랫폼'},
+  '링크루트':{상태:'진행 중',시작:'',종료:'',과제:''},
+  '케이뷰티월드와이드':{상태:'사후평가 중',시작:'',종료:'',과제:'뷰티 브랜드의 정형 및 비정형 데이터를 수집/합성/분석하는 데이터 인텔리전스 서비스 개발'},
+  '디지털뉴트리션':{상태:'진행 중',시작:'2024.08.01',종료:'2026.07.31',과제:'의학적 근거기반 식욕억제 사운드 솔루션'},
+  '클리카':{상태:'사후평가 중',시작:'2022.09.01',종료:'2024.08.31',과제:'자동 초소형 머신러닝(Auto TinyML) SaaS 플랫폼'},
+  '클로넷코퍼레이션':{상태:'실패 (극히 불량)',시작:'2021.02.10',종료:'2023.02.09',과제:'패션 커머스 판매자의 숏폼 영상 콘텐츠 공급 진입장벽을 해결하기 위한 빅데이터 기반의 영상 추천 및 영상 제작 간소화 플랫폼'},
+  '태거스':{상태:'',시작:'2020.11.01',종료:'2022.10.31',과제:'이커머스(쇼핑몰) 특화된 온라인 광고 매체 캠페인의 AtoZ 자동화 및 최적화를 위한 AI 마케팅 엔진 2.0 개발'},
+  '오물래':{상태:'실패 (미흡)',시작:'2021.04.01',종료:'2023.03.31',과제:'비대면 홈 트레이닝을 위한 IoT 기술 기반 인터랙티브 피트니스 콘텐츠 플랫폼'},
+  '오늘의픽업':{상태:'',시작:'2021.04.01',종료:'2023.03.31',과제:'즉시배송을 위한 도심 분산형 물류시스템 개발'},
+  '언디파인드':{상태:'',시작:'2021.02.10',종료:'2023.02.09',과제:'대회운영 효율화 종목 확대를 위한 머신러닝 규정 분석 A.I 어시스턴트 개발'},
+  '엔투에스':{상태:'',시작:'2020.04.01',종료:'2022.03.31',과제:'가상현실을 이용한 안과 검사 시스템 개발 및 사업화'},
+  '빅쏠':{상태:'',시작:'2019.10.11',종료:'2021.10.10',과제:'카드 혜택 빅데이터를 활용한 소비 패턴 진단으로 개인별 최적의 카드 포트폴리오 구성 추천 및 인공지능 최적화 결제 기술의 개발'},
+  '안가본길':{상태:'',시작:'2021.04.01',종료:'2023.03.31',과제:'시각화 분석과 AI 기술로 맞춤형 인테리어를 추천하고 시공과정을 온라인으로 관리해주는 비대면 스마트 인테리어 솔루션'},
+  '필드멘토':{상태:'진행 중',시작:'',종료:'',과제:'필드레슨 필수요소 데이터를 활용한 고객-프로골퍼 매칭 플랫폼 개발'},
+  '엑스크루':{상태:'진행 중',시작:'',종료:'',과제:'투어&액티비티 빅데이터 기반 AI 수요예측 상품 추천 및 다채널 유통 통합 관리 솔루션 개발'},
+  '쏌핏':{상태:'사후평가 중',시작:'',종료:'',과제:'원단 및 브랜드 특성까지 고려한 AR 기반 사이즈 비교 서비스'},
+  '풀락':{상태:'실패 (미흡)',시작:'',종료:'',과제:'AI 인사 평가 엔진을 통한 온보딩 성과 추출 솔루션'},
+  '리뉴어스랩':{상태:'',시작:'',종료:'',과제:''},
+  '수센캐럿츠':{상태:'',시작:'',종료:'',과제:''},
+  '고레로보틱스':{상태:'진행 중',시작:'',종료:'',과제:''},
+  '플레어락스':{상태:'',시작:'',종료:'',과제:''},
+  '서사':{상태:'',시작:'',종료:'',과제:''},
+  '아르고노트에이아이':{상태:'진행 중',시작:'',종료:'',과제:''},
+  '매일새옷':{상태:'',시작:'',종료:'',과제:''},
+};
+
 // ─────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────
 const fmt = n => {
-  if (!n || isNaN(n)) return '-';
-  if (n >= 100000000) return (n/100000000).toFixed(1) + '억';
-  if (n >= 10000) return Math.round(n/10000) + '만';
-  return n.toLocaleString();
+  if (n === null || n === undefined || isNaN(n) || n === 0) return '-';
+  return (n / 100000000).toFixed(2) + '억';
 };
 const fmtFull = n => {
   if (!n || isNaN(n)) return '-';
@@ -1505,6 +1563,7 @@ function renderInv(data) {
   tb.innerHTML = '';
   data.forEach((inv,idx)=>{
     const baseName = inv.name.replace(/\(.*?\)/g,'').trim();
+    const hasTips = TIPS_SET.has(inv.name.replace(/\(.*?\)/g,'').trim());
     tb.innerHTML += `<tr>
       <td style="color:var(--text-tertiary);">${idx+1}</td>
       <td style="font-weight:600;color:var(--blue-text);cursor:pointer;text-decoration:underline;text-underline-offset:2px;" onclick="openCompanyModal('${baseName}')">${inv.name}</td>
@@ -1514,6 +1573,7 @@ function renderInv(data) {
       <td class="nr" style="color:var(--blue);font-weight:600;">${fmtComma(inv.amount)}</td>
       <td class="nr">${inv.val>0?fmtComma(inv.val):'-'}</td>
       <td><span class="badge ${SBADGE[inv.status]||'b-gray'}">${inv.status}</span></td>
+      <td style="text-align:center;font-weight:700;font-size:14px;color:${hasTips?'var(--blue)':'var(--text-tertiary)'};">${hasTips?'O':'X'}</td>
     </tr>`;
   });
   document.getElementById('invCount').textContent = `총 ${data.length}건`;
@@ -1533,7 +1593,13 @@ function filterInv(){
   ));
 }
 
-const fMap = {}; INV_MAIN.forEach(i=>{fMap[i.fund]=(fMap[i.fund]||0)+1;});
+const fMap = {};      // 조합별 투자건수
+const fCoMap = {};    // 조합별 고유 회사 수
+INV_MAIN.forEach(i => {
+  fMap[i.fund] = (fMap[i.fund] || 0) + 1;
+  if (!fCoMap[i.fund]) fCoMap[i.fund] = new Set();
+  fCoMap[i.fund].add(i.name.replace(/\(.*?\)/g, '').trim());
+});
 const fLabels = Object.keys(fMap);
 const fmtFundLabel = f => {
   if (f === '컴퍼니1호') return '김기사컴퍼니\n투자조합 1호';
@@ -1561,11 +1627,12 @@ new Chart(document.getElementById('fundInvBar'), {
         const meta = chart.getDatasetMeta(i);
         meta.data.forEach((bar, idx) => {
           const value = dataset.data[idx];
+          const coCount = fCoMap[fLabels[idx]] ? fCoMap[fLabels[idx]].size : 0;
           ctx.fillStyle = '#374151';
-          ctx.font = 'bold 12px Pretendard, -apple-system, sans-serif';
+          ctx.font = 'bold 11px Pretendard, -apple-system, sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'bottom';
-          ctx.fillText(value + '건', bar.x, bar.y - 4);
+          ctx.fillText(`${coCount}개사 / ${value}건`, bar.x, bar.y - 4);
         });
       });
     }
@@ -1950,6 +2017,41 @@ function openCompanyModal(name) {
       }).join('')
     : `<tr><td colspan="5" style="text-align:center;color:var(--text-tertiary);padding:16px;">결산 데이터 없음</td></tr>`;
 
+  // ── 재무 추이 차트 ──
+  const chartFins = fins.filter(f => f.r != null || f.n != null).sort((a,b)=>a.y-b.y);
+  const chartId = 'finTrend_' + name.replace(/[^a-zA-Z0-9]/g,'_');
+  const chartSection = chartFins.length >= 2 ? `
+    <div class="modal-section-title">재무 추이</div>
+    <div style="position:relative;height:200px;margin-bottom:8px;">
+      <canvas id="${chartId}"></canvas>
+    </div>` : '';
+
+  // ── TIPS 섹션 ──
+  const tipsData = TIPS_DATA[name] || TIPS_DATA[matchedName];
+  const hasTipsModal = TIPS_SET.has(name) || TIPS_SET.has(matchedName);
+  const tipsBadgeClass = tipsData && tipsData.상태
+    ? (tipsData.상태.includes('진행') ? 'b-blue'
+      : tipsData.상태.includes('완료') ? 'b-green'
+      : tipsData.상태.includes('실패') || tipsData.상태.includes('선정') ? 'b-red'
+      : tipsData.상태.includes('사후') ? 'b-amber' : 'b-gray')
+    : 'b-gray';
+  const tipsSection = hasTipsModal && tipsData ? `
+    <div class="modal-section-title" style="color:var(--blue-text);margin-top:16px;">🎯 TIPS 현황</div>
+    <div class="modal-info-grid">
+      <div class="modal-info-item">
+        <div class="modal-info-label">상태</div>
+        <div class="modal-info-value"><span class="badge ${tipsBadgeClass}">${tipsData.상태||'-'}</span></div>
+      </div>
+      <div class="modal-info-item">
+        <div class="modal-info-label">협약 기간</div>
+        <div class="modal-info-value">${(tipsData.시작||'-') + ' ~ ' + (tipsData.종료||'-')}</div>
+      </div>
+      ${tipsData.과제 ? `<div class="modal-info-item" style="grid-column:span 2;">
+        <div class="modal-info-label">과제명</div>
+        <div class="modal-info-value" style="white-space:normal;line-height:1.6;">${tipsData.과제}</div>
+      </div>` : ''}
+    </div>` : '';
+
   document.getElementById('modalContent').innerHTML = `
     <div class="modal-co-name">${name}</div>
     <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:8px;">회사 기본 정보</div>
@@ -1961,8 +2063,51 @@ function openCompanyModal(name) {
       <thead><tr><th>연도</th><th>자본총액</th><th>부채총액</th><th>매출액</th><th>당기순이익</th></tr></thead>
       <tbody>${finRows}</tbody>
     </table>
+    ${chartSection}
+    ${tipsSection}
   `;
   document.getElementById('companyModal').classList.add('open');
+
+  // ── 재무 추이 차트 렌더 ──
+  if (chartFins.length >= 2) {
+    new Chart(document.getElementById(chartId), {
+      type: 'line',
+      data: {
+        labels: chartFins.map(f => f.y + '년'),
+        datasets: [
+          {
+            label: '매출액',
+            data: chartFins.map(f => f.r != null ? Math.round(f.r/100000000*100)/100 : null),
+            borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.08)',
+            tension: 0.3, pointRadius: 4, fill: true
+          },
+          {
+            label: '자본총액',
+            data: chartFins.map(f => f.k != null ? Math.round(f.k/100000000*100)/100 : null),
+            borderColor: '#16a34a', backgroundColor: 'transparent',
+            tension: 0.3, pointRadius: 4, borderDash: [4,3]
+          },
+          {
+            label: '당기순이익',
+            data: chartFins.map(f => f.n != null ? Math.round(f.n/100000000*100)/100 : null),
+            borderColor: '#dc2626', backgroundColor: 'transparent',
+            tension: 0.3, pointRadius: 4, borderDash: [2,2]
+          },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 14, padding: 10 } },
+          tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + (ctx.parsed.y != null ? ctx.parsed.y.toFixed(2) : '-') + '억' } }
+        },
+        scales: {
+          x: { ticks: { font: { size: 11 }, color: '#9ca3af' }, grid: { display: false } },
+          y: { ticks: { callback: v => v + '억', font: { size: 10 }, color: '#9ca3af' }, grid: { color: 'rgba(0,0,0,0.04)' } }
+        }
+      }
+    });
+  }
 }
 function closeModal() {
   document.getElementById('companyModal').classList.remove('open');
