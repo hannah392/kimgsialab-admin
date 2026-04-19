@@ -226,6 +226,15 @@ tr:hover td { background: #fafeff; }
 }
 .fund-name-title { font-size: 22px; font-weight: 700; }
 
+/* ── LP MODAL ── */
+.lp-modal-header-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+.lp-modal-inv-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+.lp-modal-inv-table th { padding: 7px 10px; text-align: right; font-size: 10px; color: var(--text-tertiary); font-weight: 600; letter-spacing: 0.03em; background: #fafafa; border-bottom: 1px solid var(--border); }
+.lp-modal-inv-table th:first-child { text-align: left; }
+.lp-modal-inv-table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--border); font-size:12px; }
+.lp-modal-inv-table td:first-child { text-align: left; }
+.lp-modal-inv-table tr:last-child td { border-bottom: none; }
+
 /* ── COMPANY MODAL ── */
 .modal-overlay {
   display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
@@ -291,7 +300,7 @@ tr:hover td { background: #fafeff; }
   </div>
   <div class="sb-footer">
     <div><span class="sb-footer-dot"></span>에어테이블 실시간 연동</div>
-    <div style="margin-top:4px;">2026.04.16 기준</div>
+    <div style="margin-top:4px;">2026.04.19 기준</div>
   </div>
 </nav>
 
@@ -345,17 +354,10 @@ tr:hover td { background: #fafeff; }
       <div class="live-tag"><span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;"></span>실시간</div>
     </div>
     <div class="stat-grid" id="invStats"></div>
-    <div class="row2">
-      <div class="chart-card">
-        <div class="chart-title">투자 상태 분포</div>
-        <div style="display:flex;gap:20px;align-items:center;">
-          <div style="position:relative;width:140px;height:140px;flex-shrink:0;"><canvas id="statusDonut"></canvas></div>
-          <div id="statusLegend" class="donut-legend"></div>
-        </div>
-      </div>
+    <div style="margin-bottom:16px;">
       <div class="chart-card">
         <div class="chart-title">조합별 투자건수</div>
-        <div style="position:relative;height:160px;"><canvas id="fundInvBar"></canvas></div>
+        <div style="position:relative;height:200px;"><canvas id="fundInvBar"></canvas></div>
       </div>
     </div>
     <div class="card">
@@ -363,8 +365,11 @@ tr:hover td { background: #fafeff; }
         <input type="text" id="invSearch" placeholder="🔍  회사명 검색..." oninput="filterInv()">
         <select id="invFund" onchange="filterInv()">
           <option value="">전체 조합</option>
-          <option>1호</option><option>2호</option><option>3호</option>
-          <option>4호</option><option>컴퍼니1호</option>
+          <option value="1호">김기사랩투자조합 1호</option>
+          <option value="2호">김기사랩투자조합 2호</option>
+          <option value="3호">김기사랩투자조합 3호</option>
+          <option value="4호">김기사랩투자조합 4호</option>
+          <option value="컴퍼니1호">김기사컴퍼니투자조합 1호</option>
         </select>
         <select id="invStatus" onchange="filterInv()">
           <option value="">전체 상태</option>
@@ -414,8 +419,8 @@ tr:hover td { background: #fafeff; }
       </div>
       <div class="tw"><table>
         <thead><tr>
-          <th>#</th><th>성명</th><th>유형</th>
-          <th class="nr">총 출자금액</th><th>상태</th>
+          <th style="width:80px;">성명</th><th style="width:50px;">유형</th>
+          <th>참여 조합</th><th style="width:70px;">상태</th>
         </tr></thead>
         <tbody id="lpTbody"></tbody>
       </table></div>
@@ -603,6 +608,599 @@ const LP = [
   {name:'송재철',type:'개인',amount:0},
 ];
 
+const LP_INVESTMENTS = {
+  '김화영': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-01',status:'출자 중',round:'4회차',mgmt:30000000},
+  ],
+  '김민철': [
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2024-04-03',status:'출자 중',round:'4회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2022-01-21',status:'출자 중',round:'3회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2021-03-03',status:'출자 중',round:'2회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'',status:'출자 중',round:'기타',mgmt:40000000},
+  ],
+  '구남균': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-13',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-24',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:30000000},
+  ],
+  '최병준': [
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-03-02',status:'출자 중',round:'2회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 2호',amount:200000000,date:'2021-02-01',status:'출자 중',round:'2회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 2호',amount:200000000,date:'2020-03-24',status:'출자 중',round:'1회차',mgmt:80000000},
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2025-06-25',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2024-04-04',status:'출자 중',round:'4회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 2호',amount:200000000,date:'2022-02-08',status:'출자 중',round:'3회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2026-04-02',status:'출자 중',round:'2회차',mgmt:120000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-07-26',status:'출자 중',round:'3회차',mgmt:60000000},
+  ],
+  '박종환': [
+    {fund:'김기사랩투자조합 2호',amount:500000000,date:'2022-01-25',status:'출자 중',round:'3회차',mgmt:150000000},
+    {fund:'김기사컴퍼니투자조합 1호',amount:0,date:'',status:'',round:'',mgmt:0},
+    {fund:'김기사랩투자조합 1호',amount:0,date:'',status:'',round:'',mgmt:0},
+    {fund:'김기사랩투자조합 3호',amount:830000000,date:'2023-03-13',status:'출자 중',round:'2회차',mgmt:160000000},
+    {fund:'김기사랩투자조합 2호',amount:500000000,date:'2020-03-23',status:'출자 중',round:'1회차',mgmt:200000000},
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2025-06-25',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:830000000,date:'2023-07-26',status:'출자 중',round:'3회차',mgmt:160000000},
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2026-03-30',status:'출자 중',round:'2회차',mgmt:120000000},
+    {fund:'김기사랩투자조합 3호',amount:830000000,date:'2022-03-31',status:'출자 중',round:'1회차',mgmt:240000000},
+    {fund:'김기사랩투자조합 2호',amount:500000000,date:'2021-02-28',status:'출자 중',round:'2회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 3호',amount:830000000,date:'2024-04-01',status:'출자 중',round:'4회차',mgmt:270000000},
+  ],
+  '박영호': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:30000000},
+  ],
+  '정주환': [
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2021-03-03',status:'출자 중',round:'2회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2022-02-09',status:'출자 중',round:'3회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2020-03-24',status:'출자 중',round:'1회차',mgmt:40000000},
+  ],
+  '석창규': [
+    {fund:'김기사랩투자조합 2호',amount:50000000,date:'2022-02-09',status:'출자 중',round:'3회차',mgmt:15000000},
+    {fund:'김기사랩투자조합 2호',amount:50000000,date:'2020-03-24',status:'출자 중',round:'1회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 2호',amount:50000000,date:'2021-02-23',status:'출자 중',round:'2회차',mgmt:15000000},
+  ],
+  '류영준': [
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-07-27',status:'출자 중',round:'3회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2020-03-24',status:'출자 중',round:'1회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2022-02-09',status:'출자 중',round:'3회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2021-03-03',status:'출자 중',round:'2회차',mgmt:30000000},
+  ],
+  '송성근': [
+    {fund:'김기사랩투자조합 3호',amount:350000000,date:'2023-03-28',status:'출자 중',round:'2회차',mgmt:100000000},
+    {fund:'김기사랩투자조합 3호',amount:350000000,date:'2023-08-28',status:'출자 중',round:'3회차',mgmt:100000000},
+    {fund:'김기사랩투자조합 3호',amount:350000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:15000000},
+  ],
+  '황성재': [
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2024-04-20',status:'출자 중',round:'4회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:100000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2023-08-18',status:'출자 중',round:'3회차',mgmt:100000000},
+  ],
+  '양희웅': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-17',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-01',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-02',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-03-31',status:'출자 중',round:'1회차',mgmt:30000000},
+  ],
+  '김기사랩': [
+    {fund:'김기사랩투자조합 4호',amount:200000000,date:'2026-04-02',status:'출자 중',round:'2회차',mgmt:80000000},
+  ],
+  '박준호': [
+    {fund:'김기사랩투자조합 4호',amount:500000000,date:'2026-04-03',status:'출자 중',round:'2회차',mgmt:200000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2024-04-03',status:'출자 중',round:'4회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:100000000},
+    {fund:'김기사랩투자조합 4호',amount:500000000,date:'2025-06-27',status:'출자 중',round:'1회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2022-03-31',status:'출자 중',round:'1회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2023-07-24',status:'출자 중',round:'3회차',mgmt:100000000},
+  ],
+  '서원준': [
+    {fund:'김기사랩투자조합 4호',amount:200000000,date:'2025-06-27',status:'출자 중',round:'1회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 4호',amount:200000000,date:'2026-03-30',status:'출자 중',round:'2회차',mgmt:80000000},
+  ],
+  '(주)김기사랩': [
+    {fund:'김기사랩투자조합 1호',amount:0,date:'',status:'',round:'',mgmt:0},
+    {fund:'김기사랩투자조합 2호',amount:300000000,date:'2021-03-02',status:'출자 중',round:'2회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 2호',amount:300000000,date:'2020-03-24',status:'출자 중',round:'1회차',mgmt:120000000},
+    {fund:'김기사랩투자조합 3호',amount:930000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:339000000},
+    {fund:'김기사랩투자조합 3호',amount:930000000,date:'2023-03-02',status:'출자 중',round:'2회차',mgmt:146000000},
+    {fund:'김기사랩투자조합 2호',amount:300000000,date:'2022-02-04',status:'출자 중',round:'3회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:930000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:219000000},
+    {fund:'김기사랩투자조합 3호',amount:930000000,date:'2023-07-27',status:'출자 중',round:'3회차',mgmt:226000000},
+  ],
+  '박형규': [
+    {fund:'김기사랩투자조합 3호',amount:350000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 3호',amount:350000000,date:'2023-07-27',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 2호',amount:150000000,date:'2021-03-03',status:'출자 중',round:'2회차',mgmt:45000000},
+    {fund:'김기사랩투자조합 3호',amount:350000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:350000000,date:'2023-03-16',status:'출자 중',round:'2회차',mgmt:100000000},
+    {fund:'김기사랩투자조합 2호',amount:150000000,date:'2022-02-07',status:'출자 중',round:'3회차',mgmt:45000000},
+    {fund:'김기사랩투자조합 2호',amount:150000000,date:'',status:'출자 중',round:'기타',mgmt:60000000},
+  ],
+  '류긍선': [
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2022-01-14',status:'탈퇴',round:'3회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2020-03-25',status:'탈퇴',round:'1회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2021-02-09',status:'탈퇴',round:'2회차',mgmt:30000000},
+  ],
+  '국지연': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:60000000},
+  ],
+  '김민지': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-27',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-02',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:30000000},
+  ],
+  '이종석': [
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2026-04-03',status:'출자 중',round:'2회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2024-04-04',status:'출자 중',round:'4회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2023-07-27',status:'출자 중',round:'3회차',mgmt:100000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:100000000},
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2025-06-27',status:'출자 중',round:'1회차',mgmt:30000000},
+  ],
+  '이창수': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-27',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:30000000},
+  ],
+  '(주)레인보': [
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2022-02-07',status:'출자 중',round:'3회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2020-03-23',status:'출자 중',round:'1회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2021-02-23',status:'출자 중',round:'2회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 4호',amount:200000000,date:'2025-06-25',status:'출자 중',round:'1회차',mgmt:60000000},
+  ],
+  '정지윤': [
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2021-03-03',status:'출자 중',round:'2회차',mgmt:300000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2020-03-24',status:'출자 중',round:'1회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2022-01-20',status:'출자 중',round:'3회차',mgmt:30000000},
+  ],
+  '조현호': [
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2024-04-01',status:'출자 중',round:'4회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2023-02-24',status:'출자 중',round:'2회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2023-07-18',status:'출자 중',round:'3회차',mgmt:40000000},
+  ],
+  '이석호': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-06',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-03',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-25',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:30000000},
+  ],
+  '강율빈': [
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2024-04-01',status:'출자 중',round:'4회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2023-02-28',status:'출자 중',round:'2회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2025-08-12',status:'출자 중',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2023-03-30',status:'출자 중',round:'기타',mgmt:100000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2022-03-31',status:'출자 중',round:'1회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2026-03-31',status:'출자 중',round:'2회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:40000000},
+  ],
+  '신정환': [
+    {fund:'김기사랩투자조합 2호',amount:50000000,date:'2020-03-24',status:'출자 중',round:'1회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 2호',amount:50000000,date:'2022-02-09',status:'출자 중',round:'3회차',mgmt:15000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-04',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-27',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 2호',amount:50000000,date:'2021-03-03',status:'출자 중',round:'2회차',mgmt:15000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-16',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:30000000},
+  ],
+  '조종남': [
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2025-06-25',status:'출자 중',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2026-04-03',status:'출자 중',round:'2회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-07-18',status:'출자 중',round:'3회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2024-04-04',status:'출자 중',round:'4회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-05-03',status:'출자 중',round:'기타',mgmt:150000000},
+  ],
+  '박천오': [
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2026-04-03',status:'출자 중',round:'2회차',mgmt:120000000},
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2025-06-27',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 2호',amount:300000000,date:'2025-11-24',status:'출자 중',round:'기타',mgmt:300000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:90000000},
+  ],
+  '최용석': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-16',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:30000000},
+  ],
+  '김원태': [
+    {fund:'김기사랩투자조합 2호',amount:500000000,date:'2022-01-28',status:'출자 중',round:'3회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 3호',amount:830000000,date:'2023-03-16',status:'출자 중',round:'2회차',mgmt:160000000},
+    {fund:'김기사랩투자조합 3호',amount:830000000,date:'2024-04-04',status:'출자 중',round:'4회차',mgmt:270000000},
+    {fund:'김기사랩투자조합 3호',amount:830000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:160000000},
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2026-03-31',status:'출자 중',round:'2회차',mgmt:120000000},
+    {fund:'김기사랩투자조합 1호',amount:0,date:'',status:'',round:'',mgmt:0},
+    {fund:'김기사컴퍼니투자조합 1호',amount:0,date:'',status:'',round:'',mgmt:0},
+    {fund:'김기사랩투자조합 3호',amount:830000000,date:'2022-03-31',status:'출자 중',round:'1회차',mgmt:240000000},
+    {fund:'김기사랩투자조합 2호',amount:500000000,date:'2021-03-03',status:'출자 중',round:'2회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 2호',amount:500000000,date:'2020-03-24',status:'출자 중',round:'1회차',mgmt:200000000},
+  ],
+  '강성': [
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2023-07-26',status:'출자 중',round:'3회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2024-04-04',status:'출자 중',round:'4회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:60000000},
+  ],
+  '조민식': [
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-07-27',status:'출자 중',round:'3회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-03-16',status:'출자 중',round:'2회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:90000000},
+  ],
+  '임상규': [
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2023-03-02',status:'출자 중',round:'2회차',mgmt:100000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:100000000},
+  ],
+  '정원석': [
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2026-04-03',status:'출자 중',round:'2회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-15',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2025-06-26',status:'출자 중',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-27',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:30000000},
+  ],
+  '노성운': [
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-03-09',status:'탈퇴',round:'2회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2022-04-01',status:'탈퇴',round:'1회차',mgmt:90000000},
+  ],
+  '조성원': [
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2023-07-18',status:'출자 중',round:'3회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2022-03-31',status:'출자 중',round:'1회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2023-03-02',status:'출자 중',round:'2회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2020-03-24',status:'출자 중',round:'1회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2024-04-04',status:'출자 중',round:'4회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2022-02-09',status:'출자 중',round:'3회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2021-03-03',status:'출자 중',round:'2회차',mgmt:30000000},
+  ],
+  '(유)준테크': [
+    {fund:'김기사랩투자조합 2호',amount:300000000,date:'2021-03-03',status:'탈퇴',round:'2회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 2호',amount:300000000,date:'2022-02-09',status:'탈퇴',round:'3회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 2호',amount:300000000,date:'2020-03-24',status:'탈퇴',round:'1회차',mgmt:120000000},
+  ],
+  '이채희': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-14',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-25',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-03',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:30000000},
+  ],
+  '이준영': [
+    {fund:'김기사랩투자조합 4호',amount:200000000,date:'2026-03-24',status:'출자 중',round:'2회차',mgmt:80000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:100000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:100000000},
+    {fund:'김기사랩투자조합 4호',amount:200000000,date:'2025-06-25',status:'출자 중',round:'1회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:500000000,date:'2024-03-21',status:'출자 중',round:'4회차',mgmt:150000000},
+  ],
+  '김동욱': [
+    {fund:'김기사랩투자조합 3호',amount:360000000,date:'2024-03-29',status:'출자 중',round:'4회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2026-04-03',status:'출자 중',round:'2회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 3호',amount:360000000,date:'2022-03-31',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:360000000,date:'2023-03-14',status:'출자 중',round:'2회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:360000000,date:'2023-07-25',status:'출자 중',round:'3회차',mgmt:60000000},
+  ],
+  '(주)아라워크앤올': [
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-03-16',status:'출자 중',round:'2회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:90000000},
+  ],
+  '김상혁': [
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2020-03-20',status:'출자 중',round:'1회차',mgmt:40000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2022-02-07',status:'출자 중',round:'3회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2021-03-03',status:'출자 중',round:'2회차',mgmt:30000000},
+  ],
+  '송재철': [
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2020-03-24',status:'탈퇴',round:'1회차',mgmt:40000000},
+  ],
+  '이석우': [
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2026-03-30',status:'출자 중',round:'2회차',mgmt:120000000},
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2025-08-01',status:'출자 중',round:'1회차',mgmt:90000000},
+  ],
+  '진승민': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-08-03',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-08',status:'출자 중',round:'4회차',mgmt:30000000},
+  ],
+  '정욱': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:20000000},
+  ],
+  '임대섭': [
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2026-04-02',status:'출자 중',round:'2회차',mgmt:120000000},
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2025-06-27',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:60000000},
+  ],
+  '김희재': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-16',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-02',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-24',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:30000000},
+  ],
+  '박현선': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'',status:'출자 중',round:'기타',mgmt:100000000},
+  ],
+  '다이얼로그스페이스': [
+    {fund:'김기사랩투자조합 4호',amount:500000000,date:'2026-04-01',status:'출자 중',round:'2회차',mgmt:200000000},
+  ],
+  '서대규': [
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2025-06-30',status:'출자 중',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2026-04-03',status:'출자 중',round:'2회차',mgmt:40000000},
+  ],
+  '신명진': [
+    {fund:'김기사랩투자조합 3호',amount:830000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:160000000},
+    {fund:'김기사랩투자조합 3호',amount:830000000,date:'2024-04-04',status:'출자 중',round:'4회차',mgmt:270000000},
+    {fund:'김기사랩투자조합 3호',amount:830000000,date:'2023-03-08',status:'출자 중',round:'2회차',mgmt:160000000},
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2025-06-26',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:830000000,date:'2022-03-31',status:'출자 중',round:'1회차',mgmt:240000000},
+    {fund:'김기사랩투자조합 2호',amount:500000000,date:'2022-02-03',status:'출자 중',round:'3회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 1호',amount:0,date:'',status:'',round:'',mgmt:0},
+    {fund:'김기사컴퍼니투자조합 1호',amount:0,date:'',status:'',round:'',mgmt:0},
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2026-03-30',status:'출자 중',round:'2회차',mgmt:120000000},
+    {fund:'김기사랩투자조합 2호',amount:500000000,date:'2021-03-02',status:'출자 중',round:'2회차',mgmt:150000000},
+    {fund:'김기사랩투자조합 2호',amount:500000000,date:'2020-03-24',status:'출자 중',round:'1회차',mgmt:200000000},
+  ],
+  '김후곤': [
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2026-04-03',status:'출자 중',round:'2회차',mgmt:120000000},
+  ],
+  '권순건': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-17',status:'출자 중',round:'기타',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-27',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:30000000},
+  ],
+  '나준석': [
+    {fund:'김기사랩투자조합 2호',amount:50000000,date:'2022-02-09',status:'출자 중',round:'3회차',mgmt:15000000},
+    {fund:'김기사랩투자조합 2호',amount:50000000,date:'2022-01-03',status:'출자 중',round:'기타',mgmt:35000000},
+  ],
+  '김정수': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-01',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-03-31',status:'출자 중',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-06',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 2호',amount:50000000,date:'2022-01-25',status:'출자 중',round:'3회차',mgmt:15000000},
+    {fund:'김기사랩투자조합 2호',amount:50000000,date:'2021-03-02',status:'출자 중',round:'2회차',mgmt:15000000},
+    {fund:'김기사랩투자조합 2호',amount:50000000,date:'',status:'출자 중',round:'기타',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-24',status:'출자 중',round:'3회차',mgmt:20000000},
+  ],
+  '오경담': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-04',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'',status:'탈퇴',round:'기타',mgmt:100000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-03-31',status:'탈퇴',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:20000000,date:'2023-03-15',status:'탈퇴',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-25',status:'탈퇴',round:'3회차',mgmt:20000000},
+  ],
+  '최현진': [
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2024-04-04',status:'출자 중',round:'4회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:200000000,date:'2023-07-27',status:'출자 중',round:'3회차',mgmt:60000000},
+  ],
+  '박지영': [
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2022-02-09',status:'탈퇴',round:'3회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2021-03-03',status:'탈퇴',round:'2회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'탈퇴',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2020-03-25',status:'탈퇴',round:'1회차',mgmt:40000000},
+  ],
+  '김은성': [
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2025-08-08',status:'출자 중',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2026-04-03',status:'출자 중',round:'2회차',mgmt:40000000},
+  ],
+  '이승응': [
+    {fund:'김기사랩투자조합 2호',amount:50000000,date:'2020-03-24',status:'탈퇴',round:'1회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 2호',amount:50000000,date:'2021-03-02',status:'탈퇴',round:'2회차',mgmt:15000000},
+  ],
+  '오경택': [
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2024-04-01',status:'출자 중',round:'4회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-07-25',status:'출자 중',round:'3회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:60000000},
+  ],
+  '김민기': [
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2026-04-03',status:'출자 중',round:'2회차',mgmt:40000000},
+  ],
+  '정의정': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-27',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-04',status:'출자 중',round:'4회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-16',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-03-31',status:'출자 중',round:'1회차',mgmt:30000000},
+  ],
+  '(주)케이큐브홀딩스': [
+    {fund:'김기사랩투자조합 2호',amount:900000000,date:'2021-03-03',status:'출자 중',round:'2회차',mgmt:270000000},
+    {fund:'김기사랩투자조합 2호',amount:900000000,date:'2022-02-09',status:'출자 중',round:'3회차',mgmt:270000000},
+    {fund:'김기사랩투자조합 2호',amount:1000000000,date:'2020-03-24',status:'출자 중',round:'1회차',mgmt:360000000},
+  ],
+  '이해섭': [
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2025-07-07',status:'출자 중',round:'1회차',mgmt:30000000},
+  ],
+  '강형민': [
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2023-03-15',status:'출자 중',round:'2회차',mgmt:20000000},
+    {fund:'김기사랩투자조합 3호',amount:100000000,date:'2024-04-02',status:'출자 중',round:'4회차',mgmt:30000000},
+  ],
+  '(주)다이얼로그스페이스': [
+    {fund:'김기사랩투자조합 3호',amount:1000000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:300000000},
+    {fund:'김기사랩투자조합 3호',amount:1000000000,date:'2023-07-27',status:'출자 중',round:'3회차',mgmt:200000000},
+    {fund:'김기사랩투자조합 3호',amount:1000000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:200000000},
+    {fund:'김기사랩투자조합 3호',amount:1000000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:300000000},
+  ],
+  '박진석': [
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2026-04-02',status:'출자 중',round:'2회차',mgmt:40000000},
+  ],
+  '이덕환': [
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2025-06-27',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 4호',amount:300000000,date:'2026-04-03',status:'출자 중',round:'2회차',mgmt:120000000},
+  ],
+  '(주)플레이스엠': [
+    {fund:'김기사랩투자조합 2호',amount:200000000,date:'2020-03-24',status:'탈퇴',round:'1회차',mgmt:80000000},
+  ],
+  '김효성': [
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2025-08-06',status:'출자 중',round:'1회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 4호',amount:100000000,date:'2026-04-01',status:'출자 중',round:'2회차',mgmt:40000000},
+  ],
+  '최성호': [
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-07-28',status:'출자 중',round:'3회차',mgmt:60000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2024-04-05',status:'출자 중',round:'4회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2022-04-01',status:'출자 중',round:'1회차',mgmt:90000000},
+    {fund:'김기사랩투자조합 3호',amount:300000000,date:'2023-03-17',status:'출자 중',round:'2회차',mgmt:60000000},
+  ],
+  '(주)인피닉': [
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2021-03-03',status:'출자 중',round:'2회차',mgmt:30000000},
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2022-02-09',status:'출자 중',round:'3회차',mgmt:30000000},
+  ],
+  '(주)퍼슨넷': [
+    {fund:'김기사랩투자조합 2호',amount:100000000,date:'2020-03-23',status:'탈퇴',round:'1회차',mgmt:40000000},
+  ],
+  '레인보': [
+    {fund:'김기사랩투자조합 4호',amount:200000000,date:'2026-03-30',status:'출자 중',round:'2회차',mgmt:80000000},
+  ],
+};
+
+const LP_FUNDS = {
+  '김화영': ['김기사랩투자조합 3호'],
+  '김민철': ['김기사랩투자조합 3호', '김기사랩투자조합 2호'],
+  '구남균': ['김기사랩투자조합 3호'],
+  '최병준': ['김기사랩투자조합 3호', '김기사랩투자조합 2호', '김기사랩투자조합 4호'],
+  '박종환': ['김기사랩투자조합 2호', '김기사컴퍼니투자조합 1호', '김기사랩투자조합 1호', '김기사랩투자조합 3호', '김기사랩투자조합 4호'],
+  '박영호': ['김기사랩투자조합 3호'],
+  '정주환': ['김기사랩투자조합 2호', '김기사랩투자조합 3호'],
+  '석창규': ['김기사랩투자조합 2호'],
+  '류영준': ['김기사랩투자조합 3호', '김기사랩투자조합 2호'],
+  '송성근': ['김기사랩투자조합 3호'],
+  '황성재': ['김기사랩투자조합 3호'],
+  '양희웅': ['김기사랩투자조합 3호'],
+  '김기사랩': ['김기사랩투자조합 4호'],
+  '박준호': ['김기사랩투자조합 4호', '김기사랩투자조합 3호'],
+  '서원준': ['김기사랩투자조합 4호'],
+  '(주)김기사랩': ['김기사랩투자조합 1호', '김기사랩투자조합 2호', '김기사랩투자조합 3호'],
+  '박형규': ['김기사랩투자조합 3호', '김기사랩투자조합 2호'],
+  '류긍선': ['김기사랩투자조합 2호'],
+  '국지연': ['김기사랩투자조합 3호'],
+  '김민지': ['김기사랩투자조합 3호'],
+  '이종석': ['김기사랩투자조합 4호', '김기사랩투자조합 3호'],
+  '이창수': ['김기사랩투자조합 3호'],
+  '(주)레인보': ['김기사랩투자조합 2호', '김기사랩투자조합 4호'],
+  '정지윤': ['김기사랩투자조합 2호'],
+  '조현호': ['김기사랩투자조합 3호'],
+  '이석호': ['김기사랩투자조합 3호'],
+  '강율빈': ['김기사랩투자조합 3호', '김기사랩투자조합 4호', '김기사랩투자조합 2호'],
+  '신정환': ['김기사랩투자조합 2호', '김기사랩투자조합 3호'],
+  '조종남': ['김기사랩투자조합 4호', '김기사랩투자조합 3호'],
+  '박천오': ['김기사랩투자조합 3호', '김기사랩투자조합 4호', '김기사랩투자조합 2호'],
+  '최용석': ['김기사랩투자조합 3호'],
+  '김원태': ['김기사랩투자조합 2호', '김기사랩투자조합 3호', '김기사랩투자조합 4호', '김기사랩투자조합 1호', '김기사컴퍼니투자조합 1호'],
+  '강성': ['김기사랩투자조합 3호'],
+  '조민식': ['김기사랩투자조합 3호'],
+  '임상규': ['김기사랩투자조합 3호'],
+  '정원석': ['김기사랩투자조합 4호', '김기사랩투자조합 3호'],
+  '노성운': ['김기사랩투자조합 3호'],
+  '조성원': ['김기사랩투자조합 3호', '김기사랩투자조합 2호'],
+  '(유)준테크': ['김기사랩투자조합 2호'],
+  '이채희': ['김기사랩투자조합 3호'],
+  '이준영': ['김기사랩투자조합 4호', '김기사랩투자조합 3호'],
+  '김동욱': ['김기사랩투자조합 3호', '김기사랩투자조합 4호'],
+  '(주)아라워크앤올': ['김기사랩투자조합 3호'],
+  '김상혁': ['김기사랩투자조합 2호'],
+  '송재철': ['김기사랩투자조합 2호'],
+  '이석우': ['김기사랩투자조합 4호'],
+  '진승민': ['김기사랩투자조합 3호'],
+  '정욱': ['김기사랩투자조합 3호'],
+  '임대섭': ['김기사랩투자조합 3호', '김기사랩투자조합 4호'],
+  '김희재': ['김기사랩투자조합 3호'],
+  '박현선': ['김기사랩투자조합 3호'],
+  '다이얼로그스페이스': ['김기사랩투자조합 4호'],
+  '서대규': ['김기사랩투자조합 4호'],
+  '신명진': ['김기사랩투자조합 3호', '김기사랩투자조합 4호', '김기사랩투자조합 2호', '김기사랩투자조합 1호', '김기사컴퍼니투자조합 1호'],
+  '김후곤': ['김기사랩투자조합 4호'],
+  '권순건': ['김기사랩투자조합 3호'],
+  '나준석': ['김기사랩투자조합 2호'],
+  '김정수': ['김기사랩투자조합 3호', '김기사랩투자조합 2호'],
+  '오경담': ['김기사랩투자조합 3호'],
+  '최현진': ['김기사랩투자조합 3호'],
+  '박지영': ['김기사랩투자조합 2호', '김기사랩투자조합 3호'],
+  '김은성': ['김기사랩투자조합 4호'],
+  '이승응': ['김기사랩투자조합 2호'],
+  '오경택': ['김기사랩투자조합 3호'],
+  '김민기': ['김기사랩투자조합 4호'],
+  '정의정': ['김기사랩투자조합 3호'],
+  '(주)케이큐브홀딩스': ['김기사랩투자조합 2호'],
+  '이해섭': ['김기사랩투자조합 4호'],
+  '강형민': ['김기사랩투자조합 3호'],
+  '(주)다이얼로그스페이스': ['김기사랩투자조합 3호'],
+  '박진석': ['김기사랩투자조합 4호'],
+  '이덕환': ['김기사랩투자조합 4호'],
+  '(주)플레이스엠': ['김기사랩투자조합 2호'],
+  '김효성': ['김기사랩투자조합 4호'],
+  '최성호': ['김기사랩투자조합 3호'],
+  '(주)인피닉': ['김기사랩투자조합 2호'],
+  '(주)퍼슨넷': ['김기사랩투자조합 2호'],
+  '레인보': ['김기사랩투자조합 4호'],
+};
+// ─────────────────────────────────────────────────────
+// LATEST VAL (Airtable 투자 테이블 fldxuYZbp322jb7r6 기준, 2026-04-16)
+// ─────────────────────────────────────────────────────
+const LATEST_VAL = {
+  '모아이스': 26589017000,
+  '론픽': 31584965147,
+  '페이히어': 152155228540,
+  '딜리버스': 45713168888,
+  '알세미': 33199254904,
+  '같다': 31300030201,
+  '퍼플러스': 17475857212,
+  '하이브': 10850076432,
+  '비사이드코리아': 17199995700,
+  '빌리어네어즈': 15432958550,
+  '플레어락스': 9601845400,
+  '티제이락스': 6300000000,
+  '유비스랩': 7650134492,
+  '매일새옷': 3700401188,
+  '수센캐럿츠': 3200100000,
+  '큐팝': 2499968472,
+  '물랑드서울': 2221908904,
+  '리뉴어스랩': 2699941502,
+  '아르고노트에이아이': 1999800000,
+  '링크루트': 1999992807,
+};
+// INV val 필드를 최신 밸류로 오버라이드
+INV.forEach(inv => {
+  const baseName = inv.name.replace(/\(.*?\)/g, '').trim();
+  if (LATEST_VAL[baseName] !== undefined) {
+    inv.val = LATEST_VAL[baseName];
+  }
+});
+
 // ─────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────
@@ -620,6 +1218,12 @@ const fmtD = s => s ? s.replace(/-/g, '.') : '-';
 const fmtComma = n => {
   if (!n || isNaN(n)) return '-';
   return n.toLocaleString('ko-KR') + '원';
+};
+const fmtFund = f => {
+  if (!f) return '-';
+  if (f === '컴퍼니1호') return '김기사컴퍼니투자조합 1호';
+  if (/^\d호$/.test(f)) return '김기사랩투자조합 ' + f;
+  return f; // 이미 전체명인 경우 그대로
 };
 const BARCOLS = ['#2563eb','#16a34a','#d97706','#dc2626','#7c3aed'];
 
@@ -838,7 +1442,7 @@ FUNDS.forEach((f,i) => {
 new Chart(document.getElementById('barChart'), {
   type: 'bar',
   data: {
-    labels: FUNDS.map(f=>f.short),
+    labels: FUNDS.map(f=>f.name),
     datasets: [
       {label:'결성금액',data:FUNDS.map(f=>Math.round(f.amount/100000000)),backgroundColor:BARCOLS.map(c=>c+'22'),borderColor:BARCOLS,borderWidth:1.5},
       {label:'납입금액',data:FUNDS.map(f=>Math.round(f.paid/100000000)),backgroundColor:BARCOLS,borderRadius:4},
@@ -879,8 +1483,8 @@ function filterInvByStatus(status) {
 }
 
 [
-  {l:'총 투자건수', v:INV_MAIN.length+'건', s:'전체', c:'c-blue', id:'', clickable:false},
   {l:'총 투자금액', v:fmt(totalInvAmt), s:'누적 집행', c:'c-blue', id:'', clickable:false},
+  {l:'총 투자건수', v:INV_MAIN.length+'건', s:'전체', c:'c-blue', id:'', clickable:false},
   {l:'진행 중', v:activeN+'건', s:'운용 중', c:'c-amber', id:'', clickable:false},
   {l:'회수 성공', v:successN+'건', s:'M&A·구주매각 · 클릭하여 보기', c:'c-green', id:'성공', clickable:true},
   {l:'실패 (파산)', v:failN+'건', s:'손실 처리 · 클릭하여 보기', c:'c-red', id:'실패', clickable:true},
@@ -909,7 +1513,7 @@ function renderInv(data) {
     tb.innerHTML += `<tr>
       <td style="color:var(--text-tertiary);">${idx+1}</td>
       <td style="font-weight:600;color:var(--blue-text);cursor:pointer;text-decoration:underline;text-underline-offset:2px;" onclick="openCompanyModal('${baseName}')">${inv.name}</td>
-      <td><span class="badge b-gray">${inv.fund}</span></td>
+      <td><span class="badge b-gray">${fmtFund(inv.fund)}</span></td>
       <td><span class="badge b-purple">${inv.type}</span></td>
       <td style="color:var(--text-secondary);">${fmtD(inv.date)}</td>
       <td class="nr" style="color:var(--blue);font-weight:600;">${fmtComma(inv.amount)}</td>
@@ -934,27 +1538,43 @@ function filterInv(){
   ));
 }
 
-new Chart(document.getElementById('statusDonut'), {
-  type:'doughnut',
-  data:{
-    labels:['진행 중','성공 (M&A)','성공 (구주 매각)','실패 (파산)'],
-    datasets:[{data:[activeN,INV_MAIN.filter(i=>i.status==='성공 (M&A)').length,INV_MAIN.filter(i=>i.status==='성공 (구주 매각)').length,failN],
-      backgroundColor:['#2563eb','#0d9488','#16a34a','#dc2626'],borderWidth:0}]
-  },
-  options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}
-});
-const sl = document.getElementById('statusLegend');
-[['진행 중','#2563eb'],['성공(M&A)','#0d9488'],['성공(구주)','#16a34a'],['실패(파산)','#dc2626']].forEach(([l,c])=>{
-  sl.innerHTML += `<div class="legend-item"><span class="legend-dot" style="background:${c};"></span>${l}</div>`;
-});
-
 const fMap = {}; INV_MAIN.forEach(i=>{fMap[i.fund]=(fMap[i.fund]||0)+1;});
 const fLabels = Object.keys(fMap);
+const fmtFundLabel = f => {
+  if (f === '컴퍼니1호') return '김기사컴퍼니\n투자조합 1호';
+  if (/^\d호$/.test(f)) return '김기사랩\n투자조합 ' + f;
+  return f;
+};
 new Chart(document.getElementById('fundInvBar'), {
   type:'bar',
-  data:{labels:fLabels,datasets:[{data:fLabels.map(k=>fMap[k]),backgroundColor:BARCOLS,borderRadius:4}]},
-  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-    scales:{x:{ticks:{font:{size:11},color:'#9ca3af'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#9ca3af'},grid:{color:'rgba(0,0,0,0.04)'}}}}
+  data:{
+    labels: fLabels.map(fmtFundLabel),
+    datasets:[{data:fLabels.map(k=>fMap[k]),backgroundColor:BARCOLS,borderRadius:4}]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{font:{size:10},color:'#9ca3af'},grid:{display:false}},
+      y:{ticks:{font:{size:10},color:'#9ca3af'},grid:{color:'rgba(0,0,0,0.04)'}}
+    }
+  },
+  plugins:[{
+    afterDatasetsDraw(chart) {
+      const ctx = chart.ctx;
+      chart.data.datasets.forEach((dataset, i) => {
+        const meta = chart.getDatasetMeta(i);
+        meta.data.forEach((bar, idx) => {
+          const value = dataset.data[idx];
+          ctx.fillStyle = '#374151';
+          ctx.font = 'bold 12px Pretendard, -apple-system, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(value + '건', bar.x, bar.y - 4);
+        });
+      });
+    }
+  }]
 });
 
 // ─────────────────────────────────────────────────────
@@ -997,11 +1617,17 @@ function renderLP(data){
   const tb = document.getElementById('lpTbody');
   tb.innerHTML='';
   data.forEach((lp,i)=>{
+    const funds = LP_FUNDS[lp.name] || [];
+    const fundBadges = funds.length > 0
+      ? funds.map(f => {
+          const short = f.replace('김기사랩투자조합 ','').replace('김기사컴퍼니투자조합 ','컴퍼니');
+          return `<span class="badge b-gray" style="margin-right:3px;">${short}</span>`;
+        }).join('')
+      : '<span style="color:var(--text-tertiary);font-size:12px;">-</span>';
     tb.innerHTML += `<tr>
-      <td style="color:var(--text-tertiary);">${i+1}</td>
-      <td style="font-weight:600;">${lp.name}</td>
-      <td><span class="badge ${lp.type==='법인'?'b-purple':'b-blue'}">${lp.type}</span></td>
-      <td class="nr" style="color:var(--blue);font-weight:600;">${lp.amount>0?fmt(lp.amount):'-'}</td>
+      <td style="font-weight:600;color:var(--blue-text);cursor:pointer;white-space:nowrap;" onclick="openLPModal('${lp.name.replace(/'/g,"\'")}')"><u>${lp.name}</u></td>
+      <td><span class="badge ${lp.type==='법인'?'b-purple':'b-blue'}" style="white-space:nowrap;">${lp.type}</span></td>
+      <td style="white-space:normal;">${fundBadges}</td>
       <td><span class="badge ${lp.amount>0?'b-green':'b-gray'}">${lp.amount>0?'출자':'미출자'}</span></td>
     </tr>`;
   });
@@ -1327,6 +1953,70 @@ function openCompanyModal(name) {
 function closeModal() {
   document.getElementById('companyModal').classList.remove('open');
 }
+function openLPModal(name) {
+  const lp = LP.find(l => l.name === name) || {name, type:'-', amount:0};
+  const investments = LP_INVESTMENTS[name] || [];
+  const funds = LP_FUNDS[name] || [];
+
+  // 참여 조합별 합산
+  const fundSums = {};
+  investments.forEach(inv => {
+    if (!fundSums[inv.fund]) fundSums[inv.fund] = 0;
+    fundSums[inv.fund] += inv.amount;
+  });
+  const totalAmt = investments.reduce((s,i) => s + i.amount, 0);
+
+  const infoItems = [
+    {l:'성명', v: lp.name},
+    {l:'유형', v: lp.type},
+    {l:'참여 조합 수', v: funds.length + '개'},
+    {l:'총 출자금액', v: totalAmt > 0 ? fmtComma(totalAmt) : '-'},
+    {l:'출자 건수', v: investments.length + '건'},
+    {l:'상태', v: lp.amount > 0 ? '출자' : '미출자'},
+  ];
+
+  const fundRows = Object.entries(fundSums).map(([f, amt]) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px;">
+      <span style="font-size:13px;font-weight:500;">${f}</span>
+      <span style="font-size:13px;font-weight:600;color:var(--blue);">${fmtComma(amt)}</span>
+    </div>`).join('');
+
+  const invRows = investments
+    .sort((a,b) => (a.date||'').localeCompare(b.date||''))
+    .map((inv,idx) => `
+    <tr>
+      <td style="color:var(--text-tertiary);">${idx+1}</td>
+      <td>${inv.fund.replace('김기사랩투자조합 ','').replace('김기사컴퍼니투자조합 ','컴퍼니')}</td>
+      <td><span class="badge b-gray">${inv.round||'-'}</span></td>
+      <td style="color:var(--text-secondary);">${inv.date ? inv.date.replace(/-/g,'.') : '-'}</td>
+      <td>${inv.status}</td>
+      <td style="color:var(--blue);font-weight:600;">${fmtComma(inv.amount)}</td>
+      <td style="color:var(--text-tertiary);">${inv.mgmt > 0 ? fmtComma(inv.mgmt) : '-'}</td>
+    </tr>`).join('');
+
+  document.getElementById('lpModalContent').innerHTML = `
+    <div class="modal-co-name">${name}</div>
+    <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:4px;">LP 기본 정보</div>
+    <div class="lp-modal-header-grid">
+      ${infoItems.map(i=>`<div class="modal-info-item"><div class="modal-info-label">${i.l}</div><div class="modal-info-value">${i.v}</div></div>`).join('')}
+    </div>
+    ${fundRows ? `<div class="modal-section-title">조합별 출자 합계</div>${fundRows}` : ''}
+    <div class="modal-section-title">출자 내역 상세</div>
+    <table class="lp-modal-inv-table">
+      <thead><tr>
+        <th>#</th><th style="text-align:left;">조합</th><th style="text-align:left;">회차</th>
+        <th style="text-align:left;">납입일</th><th style="text-align:left;">상태</th>
+        <th>약정금액</th><th>관리보수</th>
+      </tr></thead>
+      <tbody>${invRows || '<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:16px;">출자 내역 없음</td></tr>'}</tbody>
+    </table>
+  `;
+  document.getElementById('lpModal').classList.add('open');
+}
+function closeLPModal() {
+  document.getElementById('lpModal').classList.remove('open');
+}
+
 </script>
 
 <!-- Company Modal -->
@@ -1334,6 +2024,14 @@ function closeModal() {
   <div class="modal-box">
     <div class="modal-close" onclick="closeModal()">✕</div>
     <div id="modalContent"></div>
+  </div>
+</div>
+
+<!-- LP Modal -->
+<div class="modal-overlay" id="lpModal" onclick="if(event.target===this)closeLPModal()">
+  <div class="modal-box" style="width:760px;">
+    <div class="modal-close" onclick="closeLPModal()">✕</div>
+    <div id="lpModalContent"></div>
   </div>
 </div>
 </body>
