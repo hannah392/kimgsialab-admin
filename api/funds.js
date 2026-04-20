@@ -26,21 +26,21 @@ export default async function handler(req) {
   try {
     // 조합 테이블
     const fundRecs = await fetchAll('tbl4kTjRXBfZZqkkb', [
-      'fldV6OIb0N1NjJPGX', // 펀드명
-      'fldyBig7rN3L4zJlF', // 고유번호(bizno)
+      'fldV6OIb0N1NjJPGX', // 펀드명 (Fund Name)
+      'fldyBig7rN3L4zJlF', // 고유번호
       'fldMhhjs5UruVxbWa', // 설립일
-      'fldi4uHcBCs9AO8FT', // 해산일(만기)
+      'fldi4uHcBCs9AO8FT', // 해산일
       'fldtDF2gEA28ZLZhW', // 경과일
-      'fldzoFd7iVY7yiPPK', // 펀드 규모(amount)
-      'fldnuy2hJjWTiN6Nm', // 투자 금액(paid 롤업)
+      'fldzoFd7iVY7yiPPK', // 펀드 규모
+      'fldnuy2hJjWTiN6Nm', // 투자 금액
       'fldmkTRlWMKqtVTzb', // 투자 건수
     ]);
 
     // 투자(Investments) 테이블
     const invRecs = await fetchAll('tblTWqFmJPHcUaKcl', [
-      'fldaLQL0asyBs12XS', // 투자 상세 ID (no)
+      'fldaLQL0asyBs12XS', // 투자 상세 ID
       'fldKgHckkom7BzziQ', // 회사명
-      'fldZWbiEpbk8DXzQ3', // 조합명(linked)
+      'fldZWbiEpbk8DXzQ3', // 조합명
       'fldsQPreuTgF1qMMl', // 투자 종류
       'fldAc2Zvntn9pIIIk', // 투자일
       'fldQQgAjQPCMLo2iQ', // 투자금
@@ -52,13 +52,13 @@ export default async function handler(req) {
     const lpRecs = await fetchAll('tbluuk5qttawnZk1k', [
       'fldOZaZAlqvgE6nZd', // 이름
       'fldZKMiXmuXDJAT02', // 유형
-      'fld3oP1yE6ggCK7dO', // 납입 금액(rollup)
+      'fld3oP1yE6ggCK7dO', // 납입 금액
     ]);
 
     // LP 출자 테이블
     const lpInvRecs = await fetchAll('tbl3ruORr95LGhLk3', [
       'fldqeRWPBSGYi2nvQ', // 이름
-      'fldR4UKRBuV5UyJpy', // 펀드(linked)
+      'fldR4UKRBuV5UyJpy', // 펀드
       'fldrqN5GrwUwgAiLk', // 상태
       'fldie2X4997OydZOu', // 약정 금액
       'fldbUrAlfUiq9NWv4', // 회차
@@ -79,7 +79,7 @@ export default async function handler(req) {
 
     // 결산/재무 테이블
     const finRecs = await fetchAll('tblBxAkCLGurQjFBC', [
-      'fldDOI9NhZqzYwQFw', // 회사명(linked)
+      'fldDOI9NhZqzYwQFw', // 회사명
       'fldVPLgQVAspyS7wR', // 기준 연도
       'fld4Z9N1VkrFLKsyK', // 자본 총액
       'flddSGbYqYC9QnqOY', // 부채 총액
