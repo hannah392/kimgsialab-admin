@@ -1,11 +1,8 @@
-export const config = { runtime: 'edge' };
+// Edge runtime 제거 → Serverless로 변경 (Edge는 25초 타임아웃 → 7개 테이블 조회 시 실패)
 
 const BASE_ID = process.env.AIRTABLE_BASE_ID;
 const TOKEN   = process.env.AIRTABLE_API_TOKEN;
 
-// ─────────────────────────────────────────────────────
-// 테이블 ID (tbl...) — 이름이 아닌 ID를 사용하므로 한글/영어 무관
-// ─────────────────────────────────────────────────────
 const TABLES = {
   funds:         'tbl4kTjRXBfZZqkkb',  // 시트명: 조합
   investments:   'tblTWqFmJPHcUaKcl',  // 시트명: 투자 (Investments)
@@ -26,14 +23,12 @@ const FIELDS = {
   tips:          ['fldU0AYnq3LOL3ZX6','fld0xgv3qOKp3ME7i','fldxFpLI6w1aUqJOe','fldy8ZvjAfmD3LUd8','fldyyYuGa75wzE3Gf'],
 };
 
-// URL 직접 조립 — Edge runtime에서 URLSearchParams fields[] 인코딩 문제 우회
 function buildUrl(tableId, fields, offset) {
   const fieldStr  = fields.map(f => `fields%5B%5D=${f}`).join('&');
   const offsetStr = offset ? `&offset=${encodeURIComponent(offset)}` : '';
   return `https://api.airtable.com/v0/${BASE_ID}/${tableId}?pageSize=100&${fieldStr}${offsetStr}`;
 }
 
-// 단일 테이블 전체 조회 — 절대 throw 안 함, 항상 { records, warning? } 반환
 async function fetchTableSafe(tableKey) {
   const tableId = TABLES[tableKey];
   const fields  = FIELDS[tableKey];
@@ -45,38 +40,22 @@ async function fetchTableSafe(tableKey) {
 
   try {
     do {
-      if (++page > 50) { records.push(); break; } // 무한루프 방어
-
+      if (++page > 50) break;
       const url = buildUrl(tableId, fields, offset);
-      let res;
+      let res, body, json;
 
       try {
-        res = await fetch(url, {
-          headers: { Authorization: `Bearer ${TOKEN}` },
-          cache: 'no-store',
-        });
+        res  = await fetch(url, { headers: { Authorization: `Bearer ${TOKEN}` } });
+        body = await res.text();
       } catch (netErr) {
         return { records, warning: `[${tableKey}] 네트워크 오류: ${netErr.message}` };
       }
 
-      // ★ 핵심 수정: text()로 한 번만 읽고 JSON.parse — Edge에서 body 스트림 소진 방지
-      let body;
-      try {
-        body = await res.text();
-      } catch (readErr) {
-        return { records, warning: `[${tableKey}] 응답 읽기 실패: ${readErr.message}` };
-      }
+      if (!body || body.trim() === '')
+        return { records, warning: `[${tableKey}] 빈 응답 (HTTP ${res.status})` };
 
-      if (!body || body.trim() === '') {
-        return { records, warning: `[${tableKey}] 빈 응답 (status ${res.status})` };
-      }
-
-      let json;
-      try {
-        json = JSON.parse(body);
-      } catch {
-        return { records, warning: `[${tableKey}] JSON 파싱 실패 (status ${res.status}): ${body.slice(0, 300)}` };
-      }
+      try { json = JSON.parse(body); }
+      catch { return { records, warning: `[${tableKey}] JSON 파싱 실패 (HTTP ${res.status}): ${body.slice(0,200)}` }; }
 
       if (!res.ok) {
         const msg = json?.error?.message || json?.error?.type || `HTTP ${res.status}`;
@@ -90,24 +69,27 @@ async function fetchTableSafe(tableKey) {
     } while (offset);
 
     return { records };
-
   } catch (err) {
     return { records, warning: `[${tableKey}] 예외: ${err.message}` };
   }
 }
 
-export default async function handler(req) {
-  // 환경변수 체크
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+
   if (!BASE_ID || !TOKEN) {
     const missing = [!BASE_ID && 'AIRTABLE_BASE_ID', !TOKEN && 'AIRTABLE_API_TOKEN'].filter(Boolean);
-    return new Response(JSON.stringify({
+    return res.status(500).json({
       error: `환경변수 누락: ${missing.join(', ')}`,
       funds: [], investments: [], lp: [], lpInvestments: [],
       companies: [], financials: [], tips: [],
-    }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    });
   }
 
-  // 7개 테이블 병렬 조회
   const [fundsR, invR, lpR, lpInvR, coR, finR, tipsR] = await Promise.all([
     fetchTableSafe('funds'),
     fetchTableSafe('investments'),
@@ -119,11 +101,9 @@ export default async function handler(req) {
   ]);
 
   const warnings = [fundsR, invR, lpR, lpInvR, coR, finR, tipsR]
-    .filter(r => r.warning)
-    .map(r => r.warning);
+    .filter(r => r.warning).map(r => r.warning);
 
-  // 항상 200, 각 키 최소 [] 보장
-  return new Response(JSON.stringify({
+  res.status(200).json({
     funds:         Array.isArray(fundsR.records)  ? fundsR.records  : [],
     investments:   Array.isArray(invR.records)    ? invR.records    : [],
     lp:            Array.isArray(lpR.records)     ? lpR.records     : [],
@@ -132,11 +112,5 @@ export default async function handler(req) {
     financials:    Array.isArray(finR.records)    ? finR.records    : [],
     tips:          Array.isArray(tipsR.records)   ? tipsR.records   : [],
     ...(warnings.length > 0 && { warnings }),
-  }), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-    },
   });
 }
