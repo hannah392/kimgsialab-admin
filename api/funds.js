@@ -26,7 +26,8 @@ const FIELDS = {
 function buildUrl(tableId, fields, offset) {
   const fieldStr  = fields.map(f => `fields%5B%5D=${f}`).join('&');
   const offsetStr = offset ? `&offset=${encodeURIComponent(offset)}` : '';
-  return `https://api.airtable.com/v0/${BASE_ID}/${tableId}?pageSize=100&${fieldStr}${offsetStr}`;
+  // returnFieldsByFieldId=true: 응답에서 cellValuesByFieldId 형식으로 받기 (한글 필드명 회피)
+  return `https://api.airtable.com/v0/${BASE_ID}/${tableId}?pageSize=100&returnFieldsByFieldId=true&${fieldStr}${offsetStr}`;
 }
 
 async function fetchTableSafe(tableKey) {
@@ -62,7 +63,14 @@ async function fetchTableSafe(tableKey) {
         return { records, warning: `[${tableKey}] Airtable 오류: ${msg}` };
       }
 
+      // Airtable 응답 정규화: returnFieldsByFieldId=true 시 fields 키에 fld... 키로 값이 들어옴
+      // index.html 호환을 위해 cellValuesByFieldId로 별칭
       const pageRecs = Array.isArray(json?.records) ? json.records : [];
+      pageRecs.forEach(r => {
+        if (r && r.fields && !r.cellValuesByFieldId) {
+          r.cellValuesByFieldId = r.fields;
+        }
+      });
       records.push(...pageRecs);
       offset = typeof json?.offset === 'string' ? json.offset : null;
 
