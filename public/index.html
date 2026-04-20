@@ -476,27 +476,41 @@ function fundShortFromName(name) {
 
 async function loadData() {
   const res = await fetch('/api/funds', { cache: 'no-store' });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'API 오류: ' + res.status);
+  const data = await res.json().catch(() => null);
+
+  if (!data) throw new Error('API 응답을 파싱할 수 없습니다.');
+
+  // 경고 배너 (일부 테이블 실패 시 warnings 배열 포함됨)
+  if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+    console.warn('Airtable 경고:', data.warnings);
+    setTimeout(() => {
+      const banner = document.createElement('div');
+      banner.style.cssText = 'position:fixed;top:0;left:220px;right:0;background:#fef3c7;border-bottom:2px solid #f59e0b;padding:10px 20px;z-index:200;font-size:12px;color:#92400e;line-height:1.6;';
+      banner.innerHTML = '<strong>⚠️ 일부 테이블 로딩 실패</strong> (Vercel 함수 로그 확인 권장)<br>' +
+        data.warnings.join('<br>');
+      document.body.prepend(banner);
+    }, 200);
   }
-  const data = await res.json();
+
+  // 500 에러여도 빈 배열이 내려오므로 계속 진행
+  // 모든 키에 대해 Array.isArray 보장
+  const safe = key => Array.isArray(data[key]) ? data[key] : [];
 
   // ── FUNDS ──
   const fundOrder = ['rec1604ySaP3uVKka','recoWZIdIyQasXoST','rec8o4efRkIhwOiOL','recnFsdY84NhCM9tJ','recrjwhAEx7lYN2y6'];
   const fundMap = {};
-  data.funds.forEach(r => { fundMap[r.id] = r; });
+  safe('funds').forEach(r => { if (r && r.id) fundMap[r.id] = r; });
   FUNDS = fundOrder.filter(id => fundMap[id]).map(id => {
-    const f = fundMap[id].cellValuesByFieldId;
+    const f = fundMap[id].cellValuesByFieldId || {};
     const meta = FUND_ID_MAP[id] || {};
-    const formed = f.fldMhhjs5UruVxbWa || '';
+    const formed  = f.fldMhhjs5UruVxbWa || '';
     const expires = f.fldi4uHcBCs9AO8FT || '';
-    const amount = f.fldzoFd7iVY7yiPPK || 0;
-    const paid = f.fldnuy2hJjWTiN6Nm || 0;
+    const amount  = Number(f.fldzoFd7iVY7yiPPK) || 0;
+    const paid    = Number(f.fldnuy2hJjWTiN6Nm)  || 0;
     return {
       id, name: meta.name || '', short: meta.short || '',
       formed, expires, amount, paid, nav: paid,
-      investments: f.fldmkTRlWMKqtVTzb || 0,
+      investments: Number(f.fldmkTRlWMKqtVTzb) || 0,
       elapsed: calcElapsed(formed),
       bizno: meta.bizno || '',
       unpaid: Math.max(0, amount - paid),
@@ -504,52 +518,54 @@ async function loadData() {
   });
 
   // ── INV ──
-  INV = data.investments
-    .filter(r => r.cellValuesByFieldId?.fldKgHckkom7BzziQ)
+  INV = safe('investments')
+    .filter(r => r && r.cellValuesByFieldId?.fldKgHckkom7BzziQ)
     .map(r => {
-      const f = r.cellValuesByFieldId;
-      const fundLinks = f.fldZWbiEpbk8DXzQ3 || [];
+      const f = r.cellValuesByFieldId || {};
+      const fundLinks = Array.isArray(f.fldZWbiEpbk8DXzQ3) ? f.fldZWbiEpbk8DXzQ3 : [];
       const meta = FUND_ID_MAP[fundLinks[0]?.id] || {};
       return {
-        no: f.fldaLQL0asyBs12XS || 0,
-        name: f.fldKgHckkom7BzziQ || '',
-        fund: meta.short || '',
-        type: f.fldsQPreuTgF1qMMl?.name || '',
-        date: f.fldAc2Zvntn9pIIIk || '',
-        amount: f.fldQQgAjQPCMLo2iQ || 0,
-        val: f.fldxuYZbp322jb7r6 || 0,
+        no:     Number(f.fldaLQL0asyBs12XS) || 0,
+        name:   f.fldKgHckkom7BzziQ || '',
+        fund:   meta.short || '',
+        type:   f.fldsQPreuTgF1qMMl?.name || '',
+        date:   f.fldAc2Zvntn9pIIIk || '',
+        amount: Number(f.fldQQgAjQPCMLo2iQ)  || 0,
+        val:    Number(f.fldxuYZbp322jb7r6)   || 0,
         status: normalizeStatus(f.fldmtLTqZtMqndSHi),
       };
     });
 
   // ── LP ──
-  LP = data.lp
-    .filter(r => r.cellValuesByFieldId?.fldOZaZAlqvgE6nZd)
+  LP = safe('lp')
+    .filter(r => r && r.cellValuesByFieldId?.fldOZaZAlqvgE6nZd)
     .map(r => {
-      const f = r.cellValuesByFieldId;
+      const f = r.cellValuesByFieldId || {};
       return {
-        name: f.fldOZaZAlqvgE6nZd || '',
-        type: f.fldZKMiXmuXDJAT02?.name || '개인',
-        amount: f.fld3oP1yE6ggCK7dO || 0,
+        name:   f.fldOZaZAlqvgE6nZd || '',
+        type:   f.fldZKMiXmuXDJAT02?.name || '개인',
+        amount: Number(f.fld3oP1yE6ggCK7dO) || 0,
       };
     });
 
   // ── LP_INVESTMENTS + LP_FUNDS ──
   LP_INVESTMENTS = {};
   LP_FUNDS = {};
-  data.lpInvestments.forEach(r => {
-    const f = r.cellValuesByFieldId;
+  safe('lpInvestments').forEach(r => {
+    if (!r) return;
+    const f = r.cellValuesByFieldId || {};
     const name = f.fldqeRWPBSGYi2nvQ;
     if (!name) return;
-    const fundName = (f.fldR4UKRBuV5UyJpy || [])[0]?.name || '';
+    const fundLinks = Array.isArray(f.fldR4UKRBuV5UyJpy) ? f.fldR4UKRBuV5UyJpy : [];
+    const fundName  = fundLinks[0]?.name || '';
     if (!LP_INVESTMENTS[name]) LP_INVESTMENTS[name] = [];
     LP_INVESTMENTS[name].push({
-      fund: fundName,
-      amount: f.fldie2X4997OydZOu || 0,
-      date: f.fld9ajRSMny7vLRzj || '',
+      fund:   fundName,
+      amount: Number(f.fldie2X4997OydZOu) || 0,
+      date:   f.fld9ajRSMny7vLRzj || '',
       status: f.fldrqN5GrwUwgAiLk?.name || '',
-      round: f.fldbUrAlfUiq9NWv4?.name || '',
-      mgmt: f.fldJbdpDgT3xg8l2v || 0,
+      round:  f.fldbUrAlfUiq9NWv4?.name || '',
+      mgmt:   Number(f.fldJbdpDgT3xg8l2v) || 0,
     });
     if (!LP_FUNDS[name]) LP_FUNDS[name] = [];
     if (fundName && !LP_FUNDS[name].includes(fundName)) LP_FUNDS[name].push(fundName);
@@ -557,26 +573,29 @@ async function loadData() {
 
   // ── COMPANIES ──
   COMPANIES = {};
-  data.companies.forEach(r => {
-    const f = r.cellValuesByFieldId;
+  safe('companies').forEach(r => {
+    if (!r) return;
+    const f = r.cellValuesByFieldId || {};
     const name = f.fldgvMHmMUvjzkNtK;
     if (!name) return;
     COMPANIES[name] = {
-      대표자: f.fldRILTx5SzS5ifLz || '',
-      설립일: f.fldBfGloifB0ovXA2 ? f.fldBfGloifB0ovXA2.replace(/-/g, '.') : '',
+      대표자:     f.fldRILTx5SzS5ifLz || '',
+      설립일:     f.fldBfGloifB0ovXA2 ? f.fldBfGloifB0ovXA2.replace(/-/g, '.') : '',
       사업자번호: f.fldfkh29dbKxG5jeX || '',
-      연락처: f.fldaXqn7XHnIoECly || '',
-      이메일: f.fldrO3QIWyUTcL6xb || '',
-      홈페이지: f.fldMASYU2jSD1SofT || '',
+      연락처:     f.fldaXqn7XHnIoECly || '',
+      이메일:     f.fldrO3QIWyUTcL6xb || '',
+      홈페이지:   f.fldMASYU2jSD1SofT || '',
     };
   });
   TOTAL_COMPANIES_REF.val = Object.keys(COMPANIES).filter(Boolean).length;
 
   // ── FINANCIALS ──
   FINANCIALS = {};
-  data.financials.forEach(r => {
-    const f = r.cellValuesByFieldId;
-    const cname = (f.fldDOI9NhZqzYwQFw || [])[0]?.name;
+  safe('financials').forEach(r => {
+    if (!r) return;
+    const f = r.cellValuesByFieldId || {};
+    const links = Array.isArray(f.fldDOI9NhZqzYwQFw) ? f.fldDOI9NhZqzYwQFw : [];
+    const cname = links[0]?.name;
     if (!cname) return;
     if (!FINANCIALS[cname]) FINANCIALS[cname] = [];
     FINANCIALS[cname].push({
@@ -591,8 +610,9 @@ async function loadData() {
   // ── TIPS ──
   TIPS_SET = new Set();
   TIPS_DATA = {};
-  data.tips.forEach(r => {
-    const f = r.cellValuesByFieldId;
+  safe('tips').forEach(r => {
+    if (!r) return;
+    const f = r.cellValuesByFieldId || {};
     const name = f.fldU0AYnq3LOL3ZX6;
     if (!name) return;
     TIPS_SET.add(name);
