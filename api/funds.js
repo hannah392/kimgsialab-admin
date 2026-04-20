@@ -4,7 +4,7 @@ export const config = { runtime: 'edge' };
 // 환경 변수
 // ─────────────────────────────────────────────────────
 const BASE_ID = process.env.AIRTABLE_BASE_ID;   // Vercel 환경변수: appGFNu05lUUN5p7l
-const TOKEN   = process.env.AIRTABLE_API_TOKEN; // Vercel 환경변수: Airtable Personal Access Token
+const TOKEN   = process.env.AIRTABLE_API_TOKEN; // Vercel 환경변수: patWFbJiiN6PlVA6v
 
 // ─────────────────────────────────────────────────────
 // 아래 7개 테이블 ID를 직접 확인하고 수정하세요.
