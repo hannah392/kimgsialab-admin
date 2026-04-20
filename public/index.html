@@ -475,10 +475,30 @@ function fundShortFromName(name) {
 }
 
 async function loadData() {
-  const res = await fetch('/api/funds', { cache: 'no-store' });
-  const data = await res.json().catch(() => null);
+  let res, body, data;
 
-  if (!data) throw new Error('API 응답을 파싱할 수 없습니다.');
+  try {
+    res = await fetch('/api/funds', { cache: 'no-store' });
+  } catch (netErr) {
+    throw new Error('네트워크 오류: ' + netErr.message);
+  }
+
+  try {
+    body = await res.text();
+  } catch (readErr) {
+    throw new Error('응답 읽기 실패: ' + readErr.message);
+  }
+
+  if (!body || body.trim() === '') {
+    throw new Error('API 응답이 비어있습니다 (status ' + res.status + ')');
+  }
+
+  try {
+    data = JSON.parse(body);
+  } catch (parseErr) {
+    // 파싱 실패 시 응답 앞부분을 에러 메시지에 포함해서 원인 파악
+    throw new Error('JSON 파싱 실패 (status ' + res.status + '): ' + body.slice(0, 200));
+  }
 
   // 경고 배너 (일부 테이블 실패 시 warnings 배열 포함됨)
   if (Array.isArray(data.warnings) && data.warnings.length > 0) {
