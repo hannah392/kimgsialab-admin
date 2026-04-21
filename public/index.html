@@ -273,6 +273,7 @@ tr:hover td { background: #fafeff; }
 .fund-row-clickable:hover td { background: #f0f4ff !important; }
 .fund-row-clickable td:first-child { color: var(--blue-text); font-weight: 600; text-decoration: underline; text-decoration-color: transparent; transition: text-decoration-color 0.15s; }
 .fund-row-clickable:hover td:first-child { text-decoration-color: var(--blue); }
+.inv-row-clickable:hover td { background: #f0f4ff !important; }
 </style>
 </head>
 <body>
@@ -437,6 +438,8 @@ tr:hover td { background: #fafeff; }
 // ─────────────────────────────────────────────────────
 let FUNDS = [], INV = [], LP = [], LP_INVESTMENTS = {}, LP_FUNDS = {};
 let COMPANIES = {}, FINANCIALS = {}, TIPS_SET = new Set(), TIPS_DATA = {};
+let FUND_FEES = {}; // { fundId: [{type, start, end, cycle, amount, rate, payDate, base}] }
+let INV_FULL = {};  // 투자 상세 모달용: { invNo: {...전체필드} }
 const TOTAL_COMPANIES_REF = { val: 0 };
 
 const FUND_ID_MAP = {
@@ -539,25 +542,68 @@ async function loadData() {
     const expires = f.fldi4uHcBCs9AO8FT || '';
     const amount  = Number(f.fldzoFd7iVY7yiPPK) || 0;
     const paid    = Number(f.fldnuy2hJjWTiN6Nm)  || 0;
+    const navRoll = Number(f.fldFZSDfK0Fc0ujvG) || 0; // 투자 잔액(rollup)
     return {
       id, name: meta.name || '', short: meta.short || '',
-      formed, expires, amount, paid, nav: paid,
+      formed, expires, amount, paid,
+      nav: navRoll > 0 ? navRoll : paid, // NAV rollup 우선, 없으면 paid
       investments: Number(f.fldmkTRlWMKqtVTzb) || 0,
       elapsed: calcElapsed(formed),
       bizno: meta.bizno || '',
       unpaid: Math.max(0, amount - paid),
+      custodian: f.fldphEKkJ4WMFPvmG || '',       // 수탁기관 ★신규
+      mgmtFee:   Number(f.fldZSUPEuNrlwdb90) || 0, // 관리보수(rollup) ★신규
     };
   });
 
   // ── INV ──
+  // INV: 리스트 표시용 (가볍게)
+  // INV_FULL: 투자 상세 모달용 (전체 필드)
+  INV_FULL = {};
   INV = safe('investments')
     .filter(r => r && r.cellValuesByFieldId?.fldKgHckkom7BzziQ)
     .map(r => {
       const f = r.cellValuesByFieldId || {};
       const fundLinks = Array.isArray(f.fldZWbiEpbk8DXzQ3) ? f.fldZWbiEpbk8DXzQ3 : [];
       const meta = FUND_ID_MAP[fundLinks[0]?.id] || {};
+      const no = Number(f.fldaLQL0asyBs12XS) || 0;
+
+      // 투자 상세 모달용 전체 필드 저장
+      INV_FULL[no] = {
+        no,
+        name:       f.fldKgHckkom7BzziQ || '',
+        fundName:   meta.name || '',
+        fundShort:  meta.short || '',
+        round:      f.fldZjyT5HRKGsAKAF || '',              // 투자 회차
+        coFoundDate: f.fldVeuWSNWXFtrvrf || '',             // 법인설립일
+        invDate:    f.fldAc2Zvntn9pIIIk || '',              // 투자일
+        depositDate: f.fldi7qm8CTqIZ3qpH || '',             // 입금일
+        type:       f.fldsQPreuTgF1qMMl?.name || '',        // 투자 종류
+        unitPrice:  Number(f.fldy46UcaaVJlNx2k) || 0,       // 투자 단가
+        shares:     Number(f.fld1WFCec53pcP5Pe) || 0,       // 보유 주식 수
+        amount:     Number(f.fldQQgAjQPCMLo2iQ) || 0,       // 투자금
+        balance:    Number(f.fldwmEXqDq6r2Z6oY) || 0,       // 투자 잔액
+        totalShares: Number(f.fld10J4a1Nw3g0Tcu) || 0,      // 투자 후 발행 주식 수
+        valAtInv:   Number(f.fldZd40MHaJu1JnY6) || 0,       // 투자 당시 밸류
+        pctAtInv:   Number(f.fldW8PaMv6LPP4mu8) || 0,       // 투자 당시 지분율(소수)
+        latestUnit: Number(f.fldIqOZLbd6fp9qaE) || 0,       // 최신 주식 단가
+        latestShares: Number(f.fldjUeFRzOQEpNtav) || 0,     // 최신 보유 주식 수
+        latestTotalShares: Number(f.fldObhdSDzdpN7iwV) || 0,// 최신 전체 발행 주식 수
+        latestVal:  Number(f.fldxuYZbp322jb7r6) || 0,       // 최신 밸류
+        latestPct:  Number(f.fldLWcwV0JcYiffUA) || 0,       // 최신 지분율(소수)
+        multiple:   Number(f.fldXZ0dson7QbVvhN) || 0,       // 멀티플
+        status:     normalizeStatus(f.fldmtLTqZtMqndSHi),
+        rawStatus:  f.fldmtLTqZtMqndSHi?.name || '',
+        exitUnit:   Number(f.fldArX7YLKODRvCP4) || 0,       // 회수 단가
+        exitAmount: Number(f.fldPXdLQIr3xsqVH1) || 0,       // 회수 금액
+        statusDate: f.fldwVs2GgUEuiH5Ir || '',              // 상태 변경일
+        contractUrl: f.fldWQi4sa7tMWdsTL || '',             // 투자계약서 URL
+        batch:      f.fldHN12fLzJVsuWaM || '',              // 소속 기수
+      };
+
+      // 리스트용 가벼운 객체 (기존 호환 유지)
       return {
-        no:     Number(f.fldaLQL0asyBs12XS) || 0,
+        no,
         name:   f.fldKgHckkom7BzziQ || '',
         fund:   meta.short || '',
         type:   f.fldsQPreuTgF1qMMl?.name || '',
@@ -574,9 +620,13 @@ async function loadData() {
     .map(r => {
       const f = r.cellValuesByFieldId || {};
       return {
-        name:   f.fldOZaZAlqvgE6nZd || '',
-        type:   f.fldZKMiXmuXDJAT02?.name || '개인',
-        amount: Number(f.fld3oP1yE6ggCK7dO) || 0,
+        name:    f.fldOZaZAlqvgE6nZd || '',
+        type:    f.fldZKMiXmuXDJAT02?.name || '개인',
+        amount:  Number(f.fld3oP1yE6ggCK7dO) || 0,
+        phone:   f.fld0GJEcJKtajjNsL || '', // 연락처 ★신규
+        email:   f.fldJyYxBNekbUCEuI || '', // 이메일 ★신규
+        address: f.fldHFDYcfCUwVdk1l || '', // 주소 ★신규
+        memo:    f.fldDfiEn9pZ2OfXqD || '', // 비고 ★신규
       };
     });
 
@@ -598,6 +648,7 @@ async function loadData() {
       status: f.fldrqN5GrwUwgAiLk?.name || '',
       round:  f.fldbUrAlfUiq9NWv4?.name || '',
       mgmt:   Number(f.fldJbdpDgT3xg8l2v) || 0,
+      cert:   f.fldKdZ5krB3PeJ4pE || '', // 출자증서 번호 ★신규
     });
     if (!LP_FUNDS[name]) LP_FUNDS[name] = [];
     if (fundName && !LP_FUNDS[name].includes(fundName)) LP_FUNDS[name].push(fundName);
@@ -617,6 +668,7 @@ async function loadData() {
       연락처:     f.fldaXqn7XHnIoECly || '',
       이메일:     f.fldrO3QIWyUTcL6xb || '',
       홈페이지:   f.fldMASYU2jSD1SofT || '',
+      보유주식수: Number(f.fldA319Rs3posTno3) || 0, // ★신규
     };
   });
   TOTAL_COMPANIES_REF.val = Object.keys(COMPANIES).filter(Boolean).length;
@@ -653,7 +705,31 @@ async function loadData() {
       시작: f.fld0xgv3qOKp3ME7i ? f.fld0xgv3qOKp3ME7i.replace(/-/g, '.') : '',
       종료: f.fldxFpLI6w1aUqJOe ? f.fldxFpLI6w1aUqJOe.replace(/-/g, '.') : '',
       과제: f.fldyyYuGa75wzE3Gf || '',
+      유형: f.fldeIwoakzemhRcc5?.name || '',       // ★신규
+      계획서: f.fldoXod5tZlOD0cEm || '',            // ★신규 (URL)
     };
+  });
+
+  // ── FUND_FEES ── (조합 보수) ★신규
+  FUND_FEES = {};
+  safe('fundFees').forEach(r => {
+    if (!r) return;
+    const f = r.cellValuesByFieldId || {};
+    const links = Array.isArray(f.fldYg8S3CAoFzusm9) ? f.fldYg8S3CAoFzusm9 : [];
+    const fundId = links[0]?.id;
+    if (!fundId) return;
+    if (!FUND_FEES[fundId]) FUND_FEES[fundId] = [];
+    FUND_FEES[fundId].push({
+      id:      Number(f.fldtZYDDOLyL0MT3A) || 0,
+      type:    f.fldR6d1ptXQkYqVPF?.name || '',
+      start:   f.fld5B8jJ6QjWRyNxn || '',
+      end:     f.fldZYcuqEAg9aeuXZ || '',
+      cycle:   Number(f.fldnMjwflwtJI1zy4) || 0,
+      amount:  Number(f.fldmKQenFvn2kyFqF) || 0,
+      rate:    Number(f.fldrSVFn7e0XnT1DA) || 0, // 소수 (0.025 = 2.5%)
+      payDate: f.fld7BqeSeW4cC72Zl || '',
+      base:    Number(f.fldXaxFzyeAQrqfA4) || 0,
+    });
   });
 }
 
@@ -750,9 +826,9 @@ function renderDetailInvRows(data) {
   const cardCount = document.getElementById('detail-inv-count');
   if (cardCount) cardCount.textContent = data.length + '건';
   tb.innerHTML = data.sort((a,b)=>a.no-b.no).map((inv,idx) => `
-    <tr>
+    <tr class="inv-row-clickable" onclick="openInvestmentModal(${inv.no})" style="cursor:pointer;">
       <td style="color:var(--text-tertiary);">${idx+1}</td>
-      <td style="font-weight:600;">${inv.name}</td>
+      <td style="font-weight:600;color:var(--blue-text);text-decoration:underline;text-underline-offset:2px;">${inv.name}</td>
       <td><span class="badge b-purple">${inv.type}</span></td>
       <td style="color:var(--text-secondary);">${fmtD(inv.date)}</td>
       <td class="nr" style="color:var(--blue);font-weight:600;">${fmtComma(inv.amount)}</td>
@@ -795,15 +871,47 @@ function openFundDetail(fundId) {
   const soon = new Date(fund.expires) < new Date('2027-01-01');
 
   const invRows = fundInvs.sort((a,b)=>a.no-b.no).map((inv,idx) => `
-    <tr>
+    <tr class="inv-row-clickable" onclick="openInvestmentModal(${inv.no})" style="cursor:pointer;">
       <td style="color:var(--text-tertiary);">${idx+1}</td>
-      <td style="font-weight:600;">${inv.name}</td>
+      <td style="font-weight:600;color:var(--blue-text);text-decoration:underline;text-underline-offset:2px;">${inv.name}</td>
       <td><span class="badge b-purple">${inv.type}</span></td>
       <td style="color:var(--text-secondary);">${fmtD(inv.date)}</td>
       <td class="nr" style="color:var(--blue);font-weight:600;">${fmtComma(inv.amount)}</td>
       <td class="nr">${inv.val>0?fmtComma(inv.val):'-'}</td>
       <td><span class="badge ${DETAIL_SBADGE[inv.status]||'b-gray'}">${inv.status}</span></td>
     </tr>`).join('');
+
+  // 조합 보수 내역 섹션 (있는 경우에만 표시)
+  const fees = FUND_FEES[fundId] || [];
+  const feesSorted = fees.slice().sort((a,b) => (b.start||'').localeCompare(a.start||''));
+  const totalFeeAmt = fees.reduce((s,f) => s + (f.amount || 0), 0);
+  const feeRows = feesSorted.length > 0
+    ? feesSorted.map((fe, idx) => `
+      <tr>
+        <td style="color:var(--text-tertiary);">${idx+1}</td>
+        <td><span class="badge ${fe.type && fe.type.includes('관리') ? 'b-blue' : fe.type && fe.type.includes('성과') ? 'b-green' : 'b-gray'}">${fe.type || '-'}</span></td>
+        <td style="color:var(--text-secondary);">${fe.start ? fe.start.replace(/-/g,'.') : '-'} ~ ${fe.end ? fe.end.replace(/-/g,'.') : '-'}</td>
+        <td class="nr">${fe.rate > 0 ? (fe.rate*100).toFixed(2)+'%' : '-'}</td>
+        <td class="nr" style="color:var(--text-tertiary);">${fe.base > 0 ? fmtComma(fe.base) : '-'}</td>
+        <td class="nr" style="color:var(--blue);font-weight:600;">${fe.amount > 0 ? fmtComma(fe.amount) : '-'}</td>
+        <td style="color:var(--text-secondary);">${fe.payDate ? fe.payDate.replace(/-/g,'.') : '-'}</td>
+      </tr>`).join('')
+    : '';
+  const feesSection = feesSorted.length > 0 ? `
+    <div class="card" style="margin-top:20px;">
+      <div class="card-header">
+        <span class="card-title">조합 보수 내역</span>
+        <span class="card-count">${feesSorted.length}건 · 합계 ${fmtComma(totalFeeAmt)}</span>
+      </div>
+      <div class="tw"><table>
+        <thead><tr>
+          <th>#</th><th>유형</th><th>정산 기간</th>
+          <th class="nr">보수율</th><th class="nr">기준금액</th>
+          <th class="nr">보수금액</th><th>지급일</th>
+        </tr></thead>
+        <tbody>${feeRows}</tbody>
+      </table></div>
+    </div>` : '';
 
   const content = `
     <div class="page-header">
@@ -853,6 +961,14 @@ function openFundDetail(fundId) {
         <div class="detail-info-label">투자회사 수</div>
         <div class="detail-info-value c-blue">${fund.investments}개사</div>
       </div>
+      <div class="detail-info-card">
+        <div class="detail-info-label">수탁기관</div>
+        <div class="detail-info-value" style="font-size:13px;">${fund.custodian || '-'}</div>
+      </div>
+      <div class="detail-info-card">
+        <div class="detail-info-label">누적 관리보수</div>
+        <div class="detail-info-value" style="color:var(--text-secondary)">${fund.mgmtFee > 0 ? fmtFull(fund.mgmtFee) : '-'}</div>
+      </div>
     </div>
 
     <div class="stat-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:20px;">
@@ -891,6 +1007,7 @@ function openFundDetail(fundId) {
         <tbody id="detail-inv-tbody">${invRows}</tbody>
       </table></div>
     </div>
+    ${feesSection}
   `;
 
   document.getElementById('fundDetailContent').innerHTML = content;
@@ -1196,6 +1313,7 @@ function openCompanyModal(name) {
     {l:'연락처', v: co.연락처 || '-'},
     {l:'이메일', v: co.이메일 || '-'},
     {l:'홈페이지', v: co.홈페이지 ? `<a href="${co.홈페이지}" target="_blank" style="color:var(--blue);">${co.홈페이지}</a>` : '-'},
+    {l:'당사 보유주식수', v: co.보유주식수 > 0 ? fmtComma(co.보유주식수) + '주' : '-'},
   ];
 
   const finRows = fins.length > 0
@@ -1236,12 +1354,20 @@ function openCompanyModal(name) {
         <div class="modal-info-value"><span class="badge ${tipsBadgeClass}">${tipsData.상태||'-'}</span></div>
       </div>
       <div class="modal-info-item">
+        <div class="modal-info-label">유형</div>
+        <div class="modal-info-value">${tipsData.유형 || '-'}</div>
+      </div>
+      <div class="modal-info-item" style="grid-column:span 2;">
         <div class="modal-info-label">협약 기간</div>
         <div class="modal-info-value">${(tipsData.시작||'-') + ' ~ ' + (tipsData.종료||'-')}</div>
       </div>
       ${tipsData.과제 ? `<div class="modal-info-item" style="grid-column:span 2;">
         <div class="modal-info-label">과제명</div>
         <div class="modal-info-value" style="white-space:normal;line-height:1.6;">${tipsData.과제}</div>
+      </div>` : ''}
+      ${tipsData.계획서 ? `<div class="modal-info-item" style="grid-column:span 2;">
+        <div class="modal-info-label">연구개발계획서</div>
+        <div class="modal-info-value"><a href="${tipsData.계획서}" target="_blank" style="color:var(--blue);">${tipsData.계획서}</a></div>
       </div>` : ''}
     </div>` : '';
 
@@ -1306,7 +1432,7 @@ function closeModal() {
   document.getElementById('companyModal').classList.remove('open');
 }
 function openLPModal(name) {
-  const lp = LP.find(l => l.name === name) || {name, type:'-', amount:0};
+  const lp = LP.find(l => l.name === name) || {name, type:'-', amount:0, phone:'', email:'', address:'', memo:''};
   const investments = LP_INVESTMENTS[name] || [];
   const funds = LP_FUNDS[name] || [];
 
@@ -1322,6 +1448,20 @@ function openLPModal(name) {
     {l:'출자 건수', v: investments.length + '건'},
     {l:'상태', v: lp.amount > 0 ? '출자' : '미출자'},
   ];
+
+  // 연락 정보 섹션 (연락처·이메일·주소·비고 중 하나라도 있을 때만 표시)
+  const hasContact = lp.phone || lp.email || lp.address || lp.memo;
+  const contactItems = [
+    {l:'연락처', v: lp.phone || '-'},
+    {l:'이메일', v: lp.email ? `<a href="mailto:${lp.email}" style="color:var(--blue);">${lp.email}</a>` : '-'},
+    {l:'주소',   v: lp.address || '-'},
+    {l:'비고',   v: lp.memo || '-'},
+  ];
+  const contactSection = hasContact ? `
+    <div class="modal-section-title">연락 정보</div>
+    <div class="modal-info-grid">
+      ${contactItems.map(i=>`<div class="modal-info-item"><div class="modal-info-label">${i.l}</div><div class="modal-info-value" style="white-space:normal;line-height:1.5;">${i.v}</div></div>`).join('')}
+    </div>` : '';
 
   const fundRows = Object.entries(fundSums).map(([f, amt]) => `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px;">
@@ -1340,6 +1480,7 @@ function openLPModal(name) {
       <td>${inv.status}</td>
       <td style="color:var(--blue);font-weight:600;">${fmtComma(inv.amount)}</td>
       <td style="color:var(--text-tertiary);">${inv.mgmt > 0 ? fmtComma(inv.mgmt) : '-'}</td>
+      <td style="color:var(--text-tertiary);font-size:11px;">${inv.cert || '-'}</td>
     </tr>`).join('');
 
   document.getElementById('lpModalContent').innerHTML = `
@@ -1348,21 +1489,120 @@ function openLPModal(name) {
     <div class="lp-modal-header-grid">
       ${infoItems.map(i=>`<div class="modal-info-item"><div class="modal-info-label">${i.l}</div><div class="modal-info-value">${i.v}</div></div>`).join('')}
     </div>
+    ${contactSection}
     ${fundRows ? `<div class="modal-section-title">조합별 출자 합계</div>${fundRows}` : ''}
     <div class="modal-section-title">출자 내역 상세</div>
     <table class="lp-modal-inv-table">
       <thead><tr>
         <th>#</th><th style="text-align:left;">조합</th><th style="text-align:left;">회차</th>
         <th style="text-align:left;">납입일</th><th style="text-align:left;">상태</th>
-        <th>약정금액</th><th>관리보수</th>
+        <th>약정금액</th><th>관리보수</th><th style="text-align:left;">증서번호</th>
       </tr></thead>
-      <tbody>${invRows || '<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:16px;">출자 내역 없음</td></tr>'}</tbody>
+      <tbody>${invRows || '<tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:16px;">출자 내역 없음</td></tr>'}</tbody>
     </table>
   `;
   document.getElementById('lpModal').classList.add('open');
 }
 function closeLPModal() {
   document.getElementById('lpModal').classList.remove('open');
+}
+
+// ─────────────────────────────────────────────────────
+// INVESTMENT DETAIL MODAL (투자 상세 모달)
+// ─────────────────────────────────────────────────────
+function openInvestmentModal(invNo) {
+  const inv = INV_FULL[invNo];
+  if (!inv) return;
+
+  const pct = v => v > 0 ? (v * 100).toFixed(2) + '%' : '-';
+  const num = v => v > 0 ? fmtComma(v) : '-';
+  const dt  = v => v ? v.replace(/-/g,'.') : '-';
+
+  // 상태 뱃지 색상
+  const statusBadgeClass = DETAIL_SBADGE[inv.status] || 'b-gray';
+
+  // 투자 기본 정보 (항상 표시)
+  const basicItems = [
+    {l:'회사명',     v: inv.name},
+    {l:'소속 조합',  v: inv.fundName || '-'},
+    {l:'투자 회차',  v: inv.round || '-'},
+    {l:'투자 종류',  v: inv.type || '-'},
+    {l:'투자일',     v: dt(inv.invDate)},
+    {l:'입금일',     v: dt(inv.depositDate)},
+    {l:'법인설립일', v: dt(inv.coFoundDate)},
+    {l:'소속 기수',  v: inv.batch || '-'},
+  ];
+
+  // 투자 시점 정보
+  const investItems = [
+    {l:'투자금',            v: num(inv.amount), emphasis: true},
+    {l:'투자 단가',         v: inv.unitPrice > 0 ? fmtComma(inv.unitPrice) + '원' : '-'},
+    {l:'보유 주식 수',      v: inv.shares > 0 ? fmtComma(inv.shares) + '주' : '-'},
+    {l:'투자 후 발행주식수',v: inv.totalShares > 0 ? fmtComma(inv.totalShares) + '주' : '-'},
+    {l:'투자 당시 밸류',    v: num(inv.valAtInv)},
+    {l:'투자 당시 지분율',  v: pct(inv.pctAtInv)},
+  ];
+
+  // 최신 정보
+  const latestItems = [
+    {l:'최신 주식 단가',      v: inv.latestUnit > 0 ? fmtComma(inv.latestUnit) + '원' : '-'},
+    {l:'최신 보유 주식 수',   v: inv.latestShares > 0 ? fmtComma(inv.latestShares) + '주' : '-'},
+    {l:'최신 전체 발행주식수',v: inv.latestTotalShares > 0 ? fmtComma(inv.latestTotalShares) + '주' : '-'},
+    {l:'최신 밸류',           v: num(inv.latestVal), emphasis: true},
+    {l:'최신 지분율',         v: pct(inv.latestPct)},
+    {l:'멀티플',              v: inv.multiple > 0 ? inv.multiple.toFixed(2) + 'x' : '-',
+      emphasis: inv.multiple >= 1, color: inv.multiple >= 1 ? 'var(--green)' : 'var(--red)'},
+    {l:'투자 잔액',           v: num(inv.balance)},
+  ];
+
+  // 회수 정보 (회수가 있을 때만)
+  const hasExit = inv.exitAmount > 0 || inv.exitUnit > 0;
+  const exitItems = [
+    {l:'회수 단가',   v: inv.exitUnit > 0 ? fmtComma(inv.exitUnit) + '원' : '-'},
+    {l:'회수 금액',   v: num(inv.exitAmount)},
+    {l:'상태 변경일', v: dt(inv.statusDate)},
+  ];
+
+  const renderGrid = items => items.map(i => {
+    const color = i.color ? `color:${i.color};` : (i.emphasis ? 'color:var(--blue);' : '');
+    const weight = i.emphasis ? 'font-weight:600;' : '';
+    return `<div class="modal-info-item">
+      <div class="modal-info-label">${i.l}</div>
+      <div class="modal-info-value" style="${color}${weight}">${i.v}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('invModalContent').innerHTML = `
+    <div class="modal-co-name">${inv.name}
+      <span class="badge ${statusBadgeClass}" style="margin-left:8px;font-size:12px;vertical-align:middle;">${inv.status}</span>
+    </div>
+    <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:8px;">투자 상세 ID #${inv.no} · ${inv.fundName}</div>
+
+    <div class="modal-section-title">기본 정보</div>
+    <div class="modal-info-grid">${renderGrid(basicItems)}</div>
+
+    <div class="modal-section-title">투자 시점</div>
+    <div class="modal-info-grid">${renderGrid(investItems)}</div>
+
+    <div class="modal-section-title">최신 현황</div>
+    <div class="modal-info-grid">${renderGrid(latestItems)}</div>
+
+    ${hasExit ? `
+      <div class="modal-section-title" style="color:var(--green);">회수 정보</div>
+      <div class="modal-info-grid">${renderGrid(exitItems)}</div>
+    ` : ''}
+
+    ${inv.contractUrl ? `
+      <div class="modal-section-title">투자계약서</div>
+      <div style="padding:10px 12px;background:var(--bg);border-radius:8px;">
+        <a href="${inv.contractUrl}" target="_blank" style="color:var(--blue);font-size:13px;word-break:break-all;">${inv.contractUrl}</a>
+      </div>
+    ` : ''}
+  `;
+  document.getElementById('invModal').classList.add('open');
+}
+function closeInvestmentModal() {
+  document.getElementById('invModal').classList.remove('open');
 }
 
 
@@ -1381,6 +1621,14 @@ function closeLPModal() {
   <div class="modal-box" style="width:760px;">
     <div class="modal-close" onclick="closeLPModal()">✕</div>
     <div id="lpModalContent"></div>
+  </div>
+</div>
+
+<!-- Investment Detail Modal -->
+<div class="modal-overlay" id="invModal" onclick="if(event.target===this)closeInvestmentModal()">
+  <div class="modal-box" style="width:720px;">
+    <div class="modal-close" onclick="closeInvestmentModal()">✕</div>
+    <div id="invModalContent"></div>
   </div>
 </div>
 </body>
