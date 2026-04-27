@@ -461,6 +461,31 @@ function calcElapsed(formed) {
   return y + '년 ' + m + '개월 ' + d + '일';
 }
 
+// ─────────────────────────────────────────────────────
+// Airtable 응답 방어적 파싱 헬퍼
+// returnFieldsByFieldId=true 사용 시 링크 필드는 record ID 문자열 배열,
+// 싱글셀렉트는 문자열로 내려옴 (기존 API 호환: 객체 형태도 처리)
+// ─────────────────────────────────────────────────────
+function cv(r) { return (r && (r.cellValuesByFieldId || r.fields)) || {}; }
+
+function linkId(v) {
+  if (!Array.isArray(v) || !v.length) return null;
+  const x = v[0];
+  if (typeof x === 'string') return x;
+  return (x && x.id) || null;
+}
+
+function linkIds(v) {
+  if (!Array.isArray(v)) return [];
+  return v.map(x => typeof x === 'string' ? x : (x && x.id)).filter(Boolean);
+}
+
+function selName(v) {
+  if (!v) return '';
+  if (typeof v === 'string') return v;
+  return v.name || '';
+}
+
 function normalizeStatus(s) {
   if (!s) return '진행 중';
   const n = (s && s.name) ? s.name : String(s);
@@ -536,7 +561,7 @@ async function loadData() {
   const fundMap = {};
   safe('funds').forEach(r => { if (r && r.id) fundMap[r.id] = r; });
   FUNDS = fundOrder.filter(id => fundMap[id]).map(id => {
-    const f = fundMap[id].cellValuesByFieldId || {};
+    const f = cv(fundMap[id]);
     const meta = FUND_ID_MAP[id] || {};
     const formed  = f.fldMhhjs5UruVxbWa || '';
     const expires = f.fldi4uHcBCs9AO8FT || '';
@@ -561,11 +586,12 @@ async function loadData() {
   // INV_FULL: 투자 상세 모달용 (전체 필드)
   INV_FULL = {};
   INV = safe('investments')
-    .filter(r => r && r.cellValuesByFieldId?.fldKgHckkom7BzziQ)
+    .filter(r => r && cv(r).fldKgHckkom7BzziQ)
     .map(r => {
-      const f = r.cellValuesByFieldId || {};
-      const fundLinks = Array.isArray(f.fldZWbiEpbk8DXzQ3) ? f.fldZWbiEpbk8DXzQ3 : [];
-      const meta = FUND_ID_MAP[fundLinks[0]?.id] || {};
+      const f = cv(r);
+      const fundRecId = linkId(f.fldZWbiEpbk8DXzQ3);
+      const meta = FUND_ID_MAP[fundRecId] || {};
+      const coRecId = linkId(f.fldClky5F0Ca0ENHL); // 회사(Companies) 링크 ID
       const no = Number(f.fldaLQL0asyBs12XS) || 0;
 
       // 투자 상세 모달용 전체 필드 저장
@@ -574,11 +600,12 @@ async function loadData() {
         name:       f.fldKgHckkom7BzziQ || '',
         fundName:   meta.name || '',
         fundShort:  meta.short || '',
+        coId:       coRecId,                                // 회사 record ID
         round:      f.fldZjyT5HRKGsAKAF || '',              // 투자 회차
         coFoundDate: f.fldVeuWSNWXFtrvrf || '',             // 법인설립일
         invDate:    f.fldAc2Zvntn9pIIIk || '',              // 투자일
         depositDate: f.fldi7qm8CTqIZ3qpH || '',             // 입금일
-        type:       f.fldsQPreuTgF1qMMl?.name || '',        // 투자 종류
+        type:       selName(f.fldsQPreuTgF1qMMl),           // 투자 종류
         unitPrice:  Number(f.fldy46UcaaVJlNx2k) || 0,       // 투자 단가
         shares:     Number(f.fld1WFCec53pcP5Pe) || 0,       // 보유 주식 수
         amount:     Number(f.fldQQgAjQPCMLo2iQ) || 0,       // 투자금
@@ -593,7 +620,7 @@ async function loadData() {
         latestPct:  Number(f.fldLWcwV0JcYiffUA) || 0,       // 최신 지분율(소수)
         multiple:   Number(f.fldXZ0dson7QbVvhN) || 0,       // 멀티플
         status:     normalizeStatus(f.fldmtLTqZtMqndSHi),
-        rawStatus:  f.fldmtLTqZtMqndSHi?.name || '',
+        rawStatus:  selName(f.fldmtLTqZtMqndSHi),
         exitUnit:   Number(f.fldArX7YLKODRvCP4) || 0,       // 회수 단가
         exitAmount: Number(f.fldPXdLQIr3xsqVH1) || 0,       // 회수 금액
         statusDate: f.fldwVs2GgUEuiH5Ir || '',              // 상태 변경일
@@ -606,7 +633,7 @@ async function loadData() {
         no,
         name:   f.fldKgHckkom7BzziQ || '',
         fund:   meta.short || '',
-        type:   f.fldsQPreuTgF1qMMl?.name || '',
+        type:   selName(f.fldsQPreuTgF1qMMl),
         date:   f.fldAc2Zvntn9pIIIk || '',
         amount: Number(f.fldQQgAjQPCMLo2iQ)  || 0,
         val:    Number(f.fldxuYZbp322jb7r6)   || 0,
@@ -616,12 +643,12 @@ async function loadData() {
 
   // ── LP ──
   LP = safe('lp')
-    .filter(r => r && r.cellValuesByFieldId?.fldOZaZAlqvgE6nZd)
+    .filter(r => r && cv(r).fldOZaZAlqvgE6nZd)
     .map(r => {
-      const f = r.cellValuesByFieldId || {};
+      const f = cv(r);
       return {
         name:    f.fldOZaZAlqvgE6nZd || '',
-        type:    f.fldZKMiXmuXDJAT02?.name || '개인',
+        type:    selName(f.fldZKMiXmuXDJAT02) || '개인',
         amount:  Number(f.fld3oP1yE6ggCK7dO) || 0,
         phone:   f.fld0GJEcJKtajjNsL || '', // 연락처 ★신규
         email:   f.fldJyYxBNekbUCEuI || '', // 이메일 ★신규
@@ -635,18 +662,19 @@ async function loadData() {
   LP_FUNDS = {};
   safe('lpInvestments').forEach(r => {
     if (!r) return;
-    const f = r.cellValuesByFieldId || {};
+    const f = cv(r);
     const name = f.fldqeRWPBSGYi2nvQ;
     if (!name) return;
-    const fundLinks = Array.isArray(f.fldR4UKRBuV5UyJpy) ? f.fldR4UKRBuV5UyJpy : [];
-    const fundName  = fundLinks[0]?.name || '';
+    // 조합 링크에서 record ID를 뽑아 FUND_ID_MAP으로 조합명 조회
+    const fundRecId = linkId(f.fldR4UKRBuV5UyJpy);
+    const fundName  = fundRecId ? (FUND_ID_MAP[fundRecId]?.name || '') : '';
     if (!LP_INVESTMENTS[name]) LP_INVESTMENTS[name] = [];
     LP_INVESTMENTS[name].push({
       fund:   fundName,
       amount: Number(f.fldie2X4997OydZOu) || 0,
       date:   f.fld9ajRSMny7vLRzj || '',
-      status: f.fldrqN5GrwUwgAiLk?.name || '',
-      round:  f.fldbUrAlfUiq9NWv4?.name || '',
+      status: selName(f.fldrqN5GrwUwgAiLk),
+      round:  selName(f.fldbUrAlfUiq9NWv4),
       mgmt:   Number(f.fldJbdpDgT3xg8l2v) || 0,
       cert:   f.fldKdZ5krB3PeJ4pE || '', // 출자증서 번호 ★신규
     });
@@ -655,12 +683,16 @@ async function loadData() {
   });
 
   // ── COMPANIES ──
+  // COMPANIES: 회사명 → 상세 정보
+  // COMPANY_ID_MAP: 회사 record ID → 회사명 (결산/재무·TIPS 역조회용)
   COMPANIES = {};
+  const COMPANY_ID_MAP = {};
   safe('companies').forEach(r => {
     if (!r) return;
-    const f = r.cellValuesByFieldId || {};
+    const f = cv(r);
     const name = f.fldgvMHmMUvjzkNtK;
     if (!name) return;
+    if (r.id) COMPANY_ID_MAP[r.id] = name;
     COMPANIES[name] = {
       대표자:     f.fldRILTx5SzS5ifLz || '',
       설립일:     f.fldBfGloifB0ovXA2 ? f.fldBfGloifB0ovXA2.replace(/-/g, '.') : '',
@@ -677,9 +709,10 @@ async function loadData() {
   FINANCIALS = {};
   safe('financials').forEach(r => {
     if (!r) return;
-    const f = r.cellValuesByFieldId || {};
-    const links = Array.isArray(f.fldDOI9NhZqzYwQFw) ? f.fldDOI9NhZqzYwQFw : [];
-    const cname = links[0]?.name;
+    const f = cv(r);
+    // 링크 필드는 record ID 문자열 배열로 내려옴 → COMPANY_ID_MAP으로 회사명 조회
+    const coRecId = linkId(f.fldDOI9NhZqzYwQFw);
+    const cname = coRecId ? COMPANY_ID_MAP[coRecId] : null;
     if (!cname) return;
     if (!FINANCIALS[cname]) FINANCIALS[cname] = [];
     FINANCIALS[cname].push({
@@ -696,16 +729,16 @@ async function loadData() {
   TIPS_DATA = {};
   safe('tips').forEach(r => {
     if (!r) return;
-    const f = r.cellValuesByFieldId || {};
+    const f = cv(r);
     const name = f.fldU0AYnq3LOL3ZX6;
     if (!name) return;
     TIPS_SET.add(name);
     TIPS_DATA[name] = {
-      상태: f.fldy8ZvjAfmD3LUd8?.name || '',
+      상태: selName(f.fldy8ZvjAfmD3LUd8),
       시작: f.fld0xgv3qOKp3ME7i ? f.fld0xgv3qOKp3ME7i.replace(/-/g, '.') : '',
       종료: f.fldxFpLI6w1aUqJOe ? f.fldxFpLI6w1aUqJOe.replace(/-/g, '.') : '',
       과제: f.fldyyYuGa75wzE3Gf || '',
-      유형: f.fldeIwoakzemhRcc5?.name || '',       // ★신규
+      유형: selName(f.fldeIwoakzemhRcc5),       // ★신규
       계획서: f.fldoXod5tZlOD0cEm || '',            // ★신규 (URL)
     };
   });
@@ -714,14 +747,13 @@ async function loadData() {
   FUND_FEES = {};
   safe('fundFees').forEach(r => {
     if (!r) return;
-    const f = r.cellValuesByFieldId || {};
-    const links = Array.isArray(f.fldYg8S3CAoFzusm9) ? f.fldYg8S3CAoFzusm9 : [];
-    const fundId = links[0]?.id;
+    const f = cv(r);
+    const fundId = linkId(f.fldYg8S3CAoFzusm9);
     if (!fundId) return;
     if (!FUND_FEES[fundId]) FUND_FEES[fundId] = [];
     FUND_FEES[fundId].push({
       id:      Number(f.fldtZYDDOLyL0MT3A) || 0,
-      type:    f.fldR6d1ptXQkYqVPF?.name || '',
+      type:    selName(f.fldR6d1ptXQkYqVPF),
       start:   f.fld5B8jJ6QjWRyNxn || '',
       end:     f.fldZYcuqEAg9aeuXZ || '',
       cycle:   Number(f.fldnMjwflwtJI1zy4) || 0,
